@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sherlock Homes | Premium Medellin Real Estate Finder</title>
+    <meta name="description"
+        content="Discover the finest properties in Medellin with Sherlock Homes. Our advanced aggregator finds the best apartments, penthouses, and homes in El Poblado, Envigado, and beyond.">
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="background-globes">
+        <div class="globe globe-1"></div>
+        <div class="globe globe-2"></div>
+    </div>
+
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <h1>Sherlock <span class="highlight">Homes</span></h1>
+            </div>
+            <div class="header-actions">
+                <button id="scrapeBtn" class="premium-btn">
+                    <i class="fa-solid fa-arrows-rotate"></i> Actualizar
+                </button>
+            </div>
+        </header>
+
+        <section class="hero-section">
+            <div class="hero-content">
+                <h2 class="hero-title">Encuentra tu apartamento ideal</span></h2>
+                <p class="hero-subtitle">Explora las mejores propiedades de múltiples fuentes en un solo lugar. No más
+                    páginas de mierda.</p>
+
+                <div class="search-bar-container">
+                    <div class="search-input-wrapper">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <select id="websiteSelect" class="url-input">
+                            <option value="all">Todas las fuentes</option>
+                            <option value="alberto_alvarez">Alberto Alvarez</option>
+                            <option value="arrendamientos_envigado">Arrendamientos Envigado</option>
+                        </select>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="update-toggle">
+                        <input type="checkbox" id="forceUpdate">
+                        <label for="forceUpdate">Forzar Actualización</label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="filters-glass">
+            <div class="filter-group">
+                <label><i class="fa-solid fa-dollar-sign"></i> Precio Mín</label>
+                <input type="number" id="filterPriceMin" placeholder="Ej: 1000000">
+            </div>
+            <div class="filter-group">
+                <label><i class="fa-solid fa-dollar-sign"></i> Precio Máx</label>
+                <input type="number" id="filterPriceMax" placeholder="Ej: 4000000">
+            </div>
+            <div class="filter-group">
+                <label><i class="fa-solid fa-bed"></i> Hab. Mín</label>
+                <input type="number" id="filterBedroomsMin" placeholder="Ej: 1">
+            </div>
+            <div class="filter-group">
+                <label><i class="fa-solid fa-bed"></i> Hab. Máx</label>
+                <input type="number" id="filterBedroomsMax" placeholder="Ej: 5">
+            </div>
+            <div class="filter-group">
+                <label><i class="fa-solid fa-car"></i> Parking Mín</label>
+                <input type="number" id="filterParkingMin" placeholder="Ej: 1">
+            </div>
+            <div class="filter-group">
+                <label><i class="fa-solid fa-ruler-combined"></i> Área Mín (m²)</label>
+                <input type="number" id="filterAreaMin" placeholder="Ej: 60">
+            </div>
+            <div class="filter-group">
+                <label><i class="fa-solid fa-ruler-combined"></i> Área Máx (m²)</label>
+                <input type="number" id="filterAreaMax" placeholder="Ej: 120">
+            </div>
+        </section>
+
+        <div class="results-banner hidden" id="resultsBanner">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-check-circle"></i>
+                <span id="resultsCount">Se encontraron 0 apartamentos</span>
+            </div>
+            <div class="sort-group">
+                <label for="sortSelect"><i class="fa-solid fa-sort"></i> Ordenar por:</label>
+                <select id="sortSelect" class="url-input"
+                    style="padding: 0.6rem 1.2rem; height: auto; width: 260px; font-size: 1.1rem;">
+                    <option value="created_desc">Más recientes</option>
+                    <option value="created_asc">Más antiguos</option>
+                    <option value="price_asc">Precio: Menor a Mayor</option>
+                    <option value="price_desc">Precio: Mayor a Menor</option>
+                    <option value="area_asc">Área: Menor a Mayor</option>
+                    <option value="area_desc">Área: Mayor a Menor</option>
+                </select>
+            </div>
+        </div>
+
+        <main id="propertiesGrid" class="grid-container">
+            <!-- Cards will be injected here -->
+            <div class="loading-state">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+                <p>Cargando propiedades...</p>
+            </div>
+        </main>
+        <footer class="main-footer">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Sherlock Homes Medellin. Todos los derechos reservados.</p>
+            </div>
+        </footer>
+    </div>
+
+    <div id="notification" class="notification hidden">
+        <div class="notif-content">
+            <i class="fa-solid fa-bell"></i>
+            <p id="notifMessage">Mensaje</p>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="image-modal hidden">
+        <button class="modal-close" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+        <button class="modal-nav prev" aria-label="Anterior"><i class="fa-solid fa-chevron-left"></i></button>
+        <div class="modal-content">
+            <img id="modalImage" src="" alt="Vista ampliada">
+            <div class="modal-counter">1/10</div>
+        </div>
+        <button class="modal-nav next" aria-label="Siguiente"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+
+    <script src="/static/script.js?v=2.2"></script>
+</body>
+
+</html>
