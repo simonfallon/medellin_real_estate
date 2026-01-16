@@ -58,6 +58,8 @@ async def trigger_batch_scrape(source: str = "all", force: bool = False, db: Ses
             data = await scraper.scrape_arrendamientos_envigado_batch()
         elif source == "proteger":
             data = await scraper.scrape_proteger_batch()
+        elif source == "arrendamientos_las_vegas":
+            data = await scraper.scrape_arrendamientos_las_vegas_batch()
         else:
             data = await scraper.scrape_all_batch()
             

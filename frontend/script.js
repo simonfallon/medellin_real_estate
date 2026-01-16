@@ -192,7 +192,8 @@ function renderProperties(properties) {
             'alberto_alvarez': 'Alberto Álvarez',
             'arrendamientos_envigado': 'Arrendamientos Envigado',
             'arrendamientosenvigadosa': 'Arrendamientos Envigado',
-            'proteger': 'Inmobiliaria Proteger'
+            'proteger': 'Inmobiliaria Proteger',
+            'arrendamientos_las_vegas': 'Arrendamientos Las Vegas'
         };
         const sourceName = sourceMap[p.source] || p.source || 'Inmobiliaria';
 
@@ -330,7 +331,7 @@ async function triggerScrape() {
     let body = {};
     let method = 'POST';
 
-    if (selectedWebsite === 'arrendamientos_envigado' || selectedWebsite === 'alberto_alvarez' || selectedWebsite === 'proteger' || selectedWebsite === 'all') {
+    if (selectedWebsite === 'arrendamientos_envigado' || selectedWebsite === 'alberto_alvarez' || selectedWebsite === 'proteger' || selectedWebsite === 'arrendamientos_las_vegas' || selectedWebsite === 'all') {
         const forceUpdate = document.getElementById('forceUpdate').checked;
         endpoint = `/api/scrape/batch?source=${selectedWebsite}&force=${forceUpdate}`;
         if (forceUpdate) {
