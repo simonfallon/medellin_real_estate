@@ -2,7 +2,7 @@
 
 A powerful web scraping and property aggregation platform for finding rental apartments in Medellín, Colombia. This application automatically scrapes multiple real estate websites, aggregates listings, and presents them in a beautiful, filterable interface.
 
-![Sherlock Homes](./alberto_alvarez_single.png)
+![Sherlock Homes](./frontend/assets/images/sherlock_homes.png)
 
 ## ✨ Features
 
