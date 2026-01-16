@@ -27,10 +27,6 @@ BARRIOS = {
     "Otra Parte": "otra-parte",
 }
 
-PRICE_RANGES = [
-    {"min": 2500000, "max": 3500000}
-]
-
 SEARCH_URL_TEMPLATE = "https://albertoalvarez.com/inmuebles/arrendamientos/apartamento/envigado/envigado/{barrio}/?rentFrom={min_price}&rentTo={max_price}&roomsFrom=1&roomsTo=3"
 
 class AlbertoAlvarezScraper(BaseScraper):
@@ -43,7 +39,7 @@ class AlbertoAlvarezScraper(BaseScraper):
         """
         inputs = []
         for barrio_name, barrio_slug in BARRIOS.items():
-            for price_range in PRICE_RANGES:
+            for price_range in self.PRICE_RANGES:
                 url = SEARCH_URL_TEMPLATE.format(
                     barrio=barrio_slug,
                     min_price=price_range["min"],

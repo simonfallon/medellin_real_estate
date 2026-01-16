@@ -5,6 +5,10 @@ from abc import ABC, abstractmethod
 from .types import Property
 
 class BaseScraper(ABC):
+    PRICE_RANGES = [
+        {"min": 2500000, "max": 3500000}
+    ]
+
     def __init__(self, name: str, concurrency: int = 4):
         self.name = name
         self.semaphore = asyncio.Semaphore(concurrency)

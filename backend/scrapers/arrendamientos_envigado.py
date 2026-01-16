@@ -26,10 +26,6 @@ BARRIOS = {
     "Zuñiga": "8579"
 }
 
-PRICE_RANGES = [
-    {"min": 2500000, "max": 3500000}
-]
-
 class ArrendamientosEnvigadoScraper(BaseScraper):
     def __init__(self):
         super().__init__(name="Arrendamientos Envigado", concurrency=3)
@@ -40,7 +36,7 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
         """
         urls_to_scrape = []
         for barrio_name, barrio_id in BARRIOS.items():
-            for price_range in PRICE_RANGES:
+            for price_range in self.PRICE_RANGES:
                 url = SEARCH_URL_TEMPLATE.format(
                     barrio_id=barrio_id,
                     min_price=price_range["min"],
