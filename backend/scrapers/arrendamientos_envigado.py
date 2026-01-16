@@ -1,7 +1,10 @@
 import asyncio
-from playwright.async_api import async_playwright
 import re
-from typing import List, Dict
+from typing import List, Dict, Any, Tuple
+from playwright.async_api import Page, BrowserContext
+
+from .base import BaseScraper
+from .types import Property
 
 # Constants for Arrendamientos Envigado
 ARRENDAMIENTOS_ENVIGADO_BASE_URL = "https://www.arrendamientosenvigadosa.com.co/"
@@ -27,228 +30,243 @@ PRICE_RANGES = [
     {"min": 2500000, "max": 3500000}
 ]
 
-async def scrape():
-    """
-    Scrapes Arrendamientos Envigado with the pre-defined filter combinations.
-    """
-    urls_to_scrape = []
-    
-    for barrio_name, barrio_id in BARRIOS.items():
-        for price_range in PRICE_RANGES:
-            url = SEARCH_URL_TEMPLATE.format(
-                barrio_id=barrio_id,
-                min_price=price_range["min"],
-                max_price=price_range["max"]
-            )
-            # Store metadata to know what we are scraping
-            urls_to_scrape.append((url, barrio_name))
-            
-    print(f"Generated {len(urls_to_scrape)} URLs to scrape for Arrendamientos Envigado.")
-    
-    all_results = []
-    
-    # Use a semaphore to limit concurrent browser contexts/tabs
-    sem = asyncio.Semaphore(3) # scrape 3 URLs at a time
-    
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        
-        async def scrape_single_search_url(url_data):
-            url, barrio_name = url_data
-            async with sem:
-                try:
-                    print(f"Starting search for: {url} ({barrio_name})")
-                    context = await browser.new_context(
-                        user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                    )
-                    page = await context.new_page()
-                    # Pass the page to a helper that handles the list page + details
-                    results = await process_search_page(page, url, barrio_name)
-                    await context.close()
-                    return results
-                except Exception as e:
-                    print(f"Error scraping search URL {url}: {e}")
-                    return []
+class ArrendamientosEnvigadoScraper(BaseScraper):
+    def __init__(self):
+        super().__init__(name="Arrendamientos Envigado", concurrency=3)
 
-        tasks = [scrape_single_search_url(data) for data in urls_to_scrape]
+    async def get_search_inputs(self) -> List[Tuple[str, str]]:
+        """
+        Generates the list of search URLs and their associated barrio names.
+        """
+        urls_to_scrape = []
+        for barrio_name, barrio_id in BARRIOS.items():
+            for price_range in PRICE_RANGES:
+                url = SEARCH_URL_TEMPLATE.format(
+                    barrio_id=barrio_id,
+                    min_price=price_range["min"],
+                    max_price=price_range["max"]
+                )
+                urls_to_scrape.append((url, barrio_name))
+        return urls_to_scrape
+
+    async def process_search_inputs(self, context: BrowserContext, inputs: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
+        """
+        Visits each search URL and extracts property links.
+        """
+        # We can parallelize the search page processing too if we want, 
+        # but for now let's keep it simple or use a smaller semaphore if needed.
+        # The base class doesn't enforce how we process these, but returns a flat list.
+        
+        # We'll use a local semaphore for search pages
+        sem = asyncio.Semaphore(5)
+        
+        async def process_single_search(url, barrio_name):
+            async with sem:
+                page = await context.new_page()
+                try:
+                    links = await self._extract_links_from_search_page(page, url)
+                    return [(link, barrio_name) for link in links]
+                except Exception as e:
+                    print(f"[{self.name}] Error processing search {url}: {e}")
+                    return []
+                finally:
+                    await page.close()
+
+        tasks = [process_single_search(url, barrio) for url, barrio in inputs]
         results_lists = await asyncio.gather(*tasks)
         
-        # Deduplicate results by link
-        results_dict = {}
+        # Flatten results
+        all_links = []
+        seen_links = set()
         for r_list in results_lists:
-            for item in r_list:
-                # Use link as key to ensure uniqueness
-                results_dict[item['link']] = item
-        
-        all_results = list(results_dict.values())
-            
-        await browser.close()
-        
-    return all_results
+            for link, barrio in r_list:
+                if link not in seen_links:
+                    seen_links.add(link)
+                    all_links.append((link, barrio))
+                    
+        return all_links
 
-async def process_search_page(page, search_url, barrio_name):
-    """
-    Navigates to a search URL, extracts property links, and scraps their details.
-    """
-    await page.goto(search_url)
-    try:
-        await page.wait_for_load_state("networkidle", timeout=10000)
-    except:
-        pass
-    
-    # Wait for results or no results
-    try:
-        # Check for results container or specific link class
-        await page.wait_for_selector("a.link-footer-black", timeout=10000)
-    except:
-        print(f"No results or timeout for {search_url}")
-        return []
-
-    # Extract all property links
-    links = []
-    # Get all matching elements
-    cards = await page.locator("a.link-footer-black").all()
-    for card in cards:
-        href = await card.get_attribute("href")
-        if href and "inmueble.html" in href:
-            if not href.startswith("http"):
-                href = ARRENDAMIENTOS_ENVIGADO_BASE_URL + href.lstrip("/")
-            links.append(href)
-    
-    # Remove duplicates immediately if any
-    links = list(set(links))
-    print(f"Found {len(links)} properties on {search_url}")
-    
-    # We'll use the same context to create new pages for details
-    context = page.context
-    
-    async def scrape_details_with_new_page(link):
-        detail_page = await context.new_page()
+    async def _extract_links_from_search_page(self, page: Page, search_url: str) -> List[str]:
+        await page.goto(search_url)
         try:
-            return await scrape_page_details(detail_page, link, barrio_name)
-        except Exception as e:
-            print(f"Error scraping details for {link}: {e}")
-            return None
-        finally:
-            await detail_page.close()
-
-    tasks = [scrape_details_with_new_page(link) for link in links]
-    results = await asyncio.gather(*tasks)
-    
-    # Filter out None results
-    return [r for r in results if r]
-
-async def scrape_page_details(page, url, barrio_name):
-    await page.goto(url)
-    await page.wait_for_load_state("domcontentloaded")
-    
-    # Scrape details
-    title = ""
-    try:
-        await page.wait_for_selector("div.lux-grey.bold", timeout=5000)
-        title_el = page.locator("div.lux-grey.bold > span.bold").first
-        if await title_el.count() > 0:
-            title = await title_el.inner_text()
-    except Exception:
-        pass
-    
-    async def get_list_value(label):
-        try:
-            # Find span with label, get parent li, find value span
-            # Structure: li > div > span(label) ... span(value)
-            # XPath: //span[contains(text(), 'Label')]/../following-sibling::span
-            # Or simpler: locate li that contains label
-            item = page.locator("li.list-group-item", has=page.locator(f"span", has_text=label))
-            if await item.count() > 0:
-                # The value is usually in the second span or specific class
-                # Based on previous code: await item.locator("span").nth(1).inner_text()
-                spans = item.locator("span")
-                count = await spans.count()
-                if count >= 2:
-                    return await spans.nth(1).inner_text()
+            await page.wait_for_load_state("networkidle", timeout=10000)
         except:
             pass
-        return ""
-
-    price = await get_list_value("Precio")
-    area = await get_list_value("Área")
-    estrato = await get_list_value("Estrato")
-    bedrooms = await get_list_value("Alcobas")
-    bathrooms = await get_list_value("Baños")
-    parking = await get_list_value("Parqueadero")
-    
-    description = ""
-    try:
-        desc_header = page.locator("p", has_text="DESCRIPCIÓN")
-        if await desc_header.count() > 0:
-            # Assumes the next p tag has the text
-            description = await desc_header.locator("xpath=following-sibling::p[1]").inner_text()
-    except:
-        pass
-
-    # Icon fallback
-    async def get_value_by_icon(icon_keyword):
+        
         try:
-            xpath = f"//img[contains(@src, '{icon_keyword}')]/following-sibling::span"
-            el = page.locator(xpath).first
-            if await el.count() > 0:
-                return await el.inner_text()
+            await page.wait_for_selector("a.link-footer-black", timeout=10000)
         except:
-             pass
-        return ""
+            print(f"[{self.name}] No results or timeout for {search_url}")
+            return []
 
-    if not bedrooms: bedrooms = await get_value_by_icon("bed")
-    if not bathrooms: bathrooms = await get_value_by_icon("bathtub")
-    if not parking: parking = await get_value_by_icon("car")
+        links = []
+        cards = await page.locator("a.link-footer-black").all()
+        for card in cards:
+            href = await card.get_attribute("href")
+            if href and "inmueble.html" in href:
+                if not href.startswith("http"):
+                    href = ARRENDAMIENTOS_ENVIGADO_BASE_URL + href.lstrip("/")
+                links.append(href)
+        
+        return list(set(links))
 
-    # Regex fallback
-    if not bedrooms:
-        match = re.search(r"(\d+)\s*(?:alcobas|habitaciones)", description, re.IGNORECASE)
-        if match: bedrooms = match.group(1)
-            
-    if not bathrooms:
-        match = re.search(r"(\d+)\s*baños", description, re.IGNORECASE)
-        if match: bathrooms = match.group(1)
-            
-    if not parking:
-        match = re.search(r"(\d+)\s*parqueaderos?", description, re.IGNORECASE)
-        if match: parking = match.group(1)
-        elif "parqueadero" in description.lower(): parking = "1"
+    async def extract_property_details(self, page: Page, link: str, barrio_name: str) -> Property:
+        await page.goto(link)
+        await page.wait_for_load_state("domcontentloaded")
+        
+        # Scrape details
+        title = ""
+        try:
+            await page.wait_for_selector("div.lux-grey.bold", timeout=5000)
+            title_el = page.locator("div.lux-grey.bold > span.bold").first
+            if await title_el.count() > 0:
+                title = await title_el.inner_text()
+        except Exception:
+            pass
+        
+        async def get_list_value(label):
+            try:
+                item = page.locator("li.list-group-item", has=page.locator(f"span", has_text=label))
+                if await item.count() > 0:
+                    spans = item.locator("span")
+                    count = await spans.count()
+                    if count >= 2:
+                        return await spans.nth(1).inner_text()
+            except:
+                pass
+            return ""
+
+        price = await get_list_value("Precio")
+        area = await get_list_value("Área")
+        estrato = await get_list_value("Estrato")
+        bedrooms = await get_list_value("Alcobas")
+        bathrooms = await get_list_value("Baños")
+        parking = await get_list_value("Parqueadero")
+        
+        description = ""
+        try:
+            desc_header = page.locator("p", has_text="DESCRIPCIÓN")
+            if await desc_header.count() > 0:
+                description = await desc_header.locator("xpath=following-sibling::p[1]").inner_text()
+        except:
+            pass
+
+        # Icon fallback
+        async def get_value_by_icon(icon_keyword):
+            try:
+                xpath = f"//img[contains(@src, '{icon_keyword}')]/following-sibling::span"
+                el = page.locator(xpath).first
+                if await el.count() > 0:
+                    return await el.inner_text()
+            except:
+                 pass
+            return ""
+
+        if not bedrooms: bedrooms = await get_value_by_icon("bed")
+        if not bathrooms: bathrooms = await get_value_by_icon("bathtub")
+        if not parking: parking = await get_value_by_icon("car")
+
+        # Regex fallback
+        if not bedrooms:
+            match = re.search(r"(\d+)\s*(?:alcobas|habitaciones)", description, re.IGNORECASE)
+            if match: bedrooms = match.group(1)
+                
+        if not bathrooms:
+            match = re.search(r"(\d+)\s*baños", description, re.IGNORECASE)
+            if match: bathrooms = match.group(1)
+                
+        if not parking:
+            match = re.search(r"(\d+)\s*parqueaderos?", description, re.IGNORECASE)
+            if match: parking = match.group(1)
+            elif "parqueadero" in description.lower(): parking = "1"
+        
+        images = []
+        carousel_imgs = await page.locator(".carousel-item img").all()
+        for img in carousel_imgs:
+            src = await img.get_attribute("src")
+            if src:
+                if "logo-ae-new.png" in src or "assets/" in src:
+                    continue
+                images.append(src)
+                
+        # Extract code from URL
+        code = ""
+        try:
+            code_match = re.search(r'(?:codigo|inmueble)=(\d+)', link)
+            if code_match:
+                code = code_match.group(1)
+        except:
+            pass
+        
+        # Default image if none found
+        image_url = images[0] if images else ""
+
+        return {
+            "code": code,
+            "title": title.strip() if title else "",
+            "location": barrio_name.strip(),
+            "price": price.strip() if price else "",
+            "area": area.strip() if area else "",
+            "estrato": estrato.strip() if estrato else "",
+            "bedrooms": bedrooms.strip() if bedrooms else "",
+            "bathrooms": bathrooms.strip() if bathrooms else "",
+            "parking": parking.strip() if parking else "",
+            "description": description.strip(),
+            "images": images,
+            "image_url": image_url,
+            "link": link,
+            "source": "arrendamientos_envigado"
+        }
+
+# Facade for backward compatibility
+async def scrape() -> List[Property]:
+    scraper = ArrendamientosEnvigadoScraper()
+    return await scraper.scrape()
+
+# Expose helper functions for tests if needed
+# Note: Since tests called 'process_search_page' and 'scrape_page_details' directly, 
+# we might need to expose them or update tests. 
+# For now, let's expose wrappers that mimic the old API for testing purposes, 
+# or rewrite tests. The prompt asked to "improve maintainability", so updating tests is better.
+# But "Verify functionality with test_arrendamientos_envigado.py" implies keeping tests working.
+# Let's see if we can expose static methods or just update the test file later.
+# Actually, the user's plan said "Verify functionality with test_arrendamientos_envigado.py".
+# I should probably update the test file to use the class methods or make these static.
+# But 'process_search_page' takes a 'page' object. 
+# Let's add them as module-level wrappers that delegate to an instance for now, solely for tests.
+
+async def process_search_page(page, search_url, barrio_name):
+    scraper = ArrendamientosEnvigadoScraper()
+    # 1. Get links from the search page
+    links = await scraper._extract_links_from_search_page(page, search_url)
     
-    images = []
-    carousel_imgs = await page.locator(".carousel-item img").all()
-    for img in carousel_imgs:
-        src = await img.get_attribute("src")
-        if src:
-            # Filter out the recurring logo/watermark image and ensure it's a valid property image
-            if "logo-ae-new.png" in src or "assets/" in src:
-                continue
-            images.append(src)
+    # 2. Scrape details for each link
+    # The old test expects us to use the passed 'page' but the old logic created NEW pages for details.
+    # We can reuse the scraper's method. However, scraper methods usually manage their own pages or take a page.
+    # extract_property_details takes a page.
+    # We should create a new page for each detail to be safe and consistent with the legacy behavior's robustness,
+    # or better yet, use the scraper's semaphore-managed logic if possible.
+    # But here we are in a simple function with a passed 'page' (which is probably the search page).
+    # The loop in the old code used 'context.new_page()'.
+    
+    context = page.context
+    results = []
+    
+    # We can't easily use the scraper's tasks because they might expect internal state or manage their own browsing context.
+    # But extract_property_details is stateless regarding the browser, it just needs a page.
+    
+    for link in links:
+        try:
+            detail_page = await context.new_page()
+            prop = await scraper.extract_property_details(detail_page, link, barrio_name)
+            if prop:
+                results.append(prop)
+            await detail_page.close()
+        except Exception as e:
+            print(f"Error in facade scraping {link}: {e}")
             
-    # Use the reliable barrio_name passed from the search context
-    location = barrio_name
+    return results
 
-    # Extract code from URL (e.g., codigo=12345 or inmueble=12345)
-    code = ""
-    try:
-        code_match = re.search(r'(?:codigo|inmueble)=(\d+)', url)
-        if code_match:
-            code = code_match.group(1)
-    except:
-        pass
-
-    return {
-        "code": code,
-        "title": title.strip() if title else "",
-        "location": location.strip(),
-        "price": price.strip() if price else "",
-        "area": area.strip() if area else "",
-        "estrato": estrato.strip() if estrato else "",
-        "bedrooms": bedrooms.strip() if bedrooms else "",
-        "bathrooms": bathrooms.strip() if bathrooms else "",
-        "parking": parking.strip() if parking else "",
-        "description": description.strip(),
-        "images": images,
-        "link": url,
-        "source": "arrendamientos_envigado"
-    }
+async def scrape_page_details(page, url, barrio_name):
+    scraper = ArrendamientosEnvigadoScraper()
+    return await scraper.extract_property_details(page, url, barrio_name)
