@@ -23,9 +23,9 @@ class TestArrendamientosEnvigado(unittest.IsolatedAsyncioTestCase):
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
             
-            # scrape_page_details(page, url, barrio_name)
-            # providing a dummy barrio name for testing
-            result = await arrendamientos_envigado.scrape_page_details(page, url, "TestBarrio")
+            scraper = arrendamientos_envigado.ArrendamientosEnvigadoScraper()
+            # scrape_page_details equivalent is extract_property_details
+            result = await scraper.extract_property_details(page, url, "TestBarrio")
             
             await browser.close()
             
@@ -41,15 +41,31 @@ class TestArrendamientosEnvigado(unittest.IsolatedAsyncioTestCase):
         
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
+            context = await browser.new_context()
+            page = await context.new_page()
             
-            # process_search_page(page, search_url, barrio_name)
-            results = await arrendamientos_envigado.process_search_page(page, url, "TestSearch")
+            scraper = arrendamientos_envigado.ArrendamientosEnvigadoScraper()
+            
+            # Mimic the old process_search_page logic using class methods
+            # 1. Get links
+            links = await scraper._extract_links_from_search_page(page, url)
+            
+            # 2. Process links (mocking the loop from the facade)
+            results = []
+            for link in links:
+                try:
+                    detail_page = await context.new_page()
+                    prop = await scraper.extract_property_details(detail_page, link, "TestSearch")
+                    if prop:
+                        results.append(prop)
+                    await detail_page.close()
+                except Exception as e:
+                    print(f"Error scraping {link}: {e}")
             
             await browser.close()
             
+            # Assertion logic remains the same
             self.assertIsInstance(results, list)
-            # We expect at least one result if the URL is valid and has listings
             if len(results) == 0:
                 print("Warning: No results found on search page. This might be due to market changes.")
             else:

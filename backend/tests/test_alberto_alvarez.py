@@ -23,8 +23,9 @@ class TestAlbertoAlvarez(unittest.IsolatedAsyncioTestCase):
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
             
-            # scrape_detail_page(page, url, barrio_name)
-            result = await alberto_alvarez.scrape_detail_page(page, url, "TestBarrio")
+            scraper = alberto_alvarez.AlbertoAlvarezScraper()
+            # scrape_detail_page equivalent is extract_property_details
+            result = await scraper.extract_property_details(page, url, "TestBarrio")
             
             await browser.close()
             
@@ -43,8 +44,10 @@ class TestAlbertoAlvarez(unittest.IsolatedAsyncioTestCase):
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
             
+            scraper = alberto_alvarez.AlbertoAlvarezScraper()
+            
             # get_search_results_links(page, url)
-            links = await alberto_alvarez.get_search_results_links(page, url)
+            links = await scraper._get_search_results_links(page, url)
             
             print(f"Found {len(links)} property links. Validating a subset to avoid timeout...")
             self.assertTrue(len(links) > 0)
@@ -59,7 +62,7 @@ class TestAlbertoAlvarez(unittest.IsolatedAsyncioTestCase):
                 # In scraping logic we usually close pages.
                 detail_page = await browser.new_page()
                 try:
-                    result = await alberto_alvarez.scrape_detail_page(detail_page, link, "SearchTestBarrio")
+                    result = await scraper.extract_property_details(detail_page, link, "SearchTestBarrio")
                     validate_property(self, result, expected_source="alberto_alvarez")
                 finally:
                     await detail_page.close()

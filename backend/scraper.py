@@ -1,20 +1,25 @@
-from .scrapers import arrendamientos_envigado, alberto_alvarez
+from .scrapers.arrendamientos_envigado import ArrendamientosEnvigadoScraper
+from .scrapers.alberto_alvarez import AlbertoAlvarezScraper
 from . import storage
 import asyncio
 
-# Legacy / Facade
 # Scrapers for specific sites
 async def scrape_arrendamientos_envigado_batch():
-    return await arrendamientos_envigado.scrape()
+    scraper = ArrendamientosEnvigadoScraper()
+    return await scraper.scrape()
 
 async def scrape_alberto_alvarez_batch():
-    return await alberto_alvarez.scrape()
+    scraper = AlbertoAlvarezScraper()
+    return await scraper.scrape()
 
 async def scrape_all_batch():
     # Run both scrapers concurrently
+    envigado_scraper = ArrendamientosEnvigadoScraper()
+    alberto_scraper = AlbertoAlvarezScraper()
+    
     envigado_results, alberto_results = await asyncio.gather(
-        arrendamientos_envigado.scrape(),
-        alberto_alvarez.scrape()
+        envigado_scraper.scrape(),
+        alberto_scraper.scrape()
     )
     return envigado_results + alberto_results
 

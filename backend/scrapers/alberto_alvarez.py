@@ -329,15 +329,4 @@ class AlbertoAlvarezScraper(BaseScraper):
             "description": "" # DOM scrape didn't implement description before?
         }
 
-async def scrape() -> List[Property]:
-    scraper = AlbertoAlvarezScraper()
-    return await scraper.scrape()
 
-# Test helpers
-async def get_search_results_links(page, url):
-    scraper = AlbertoAlvarezScraper()
-    return await scraper._get_search_results_links(page, url)
-
-async def scrape_detail_page(page, url, barrio_name=None):
-    scraper = AlbertoAlvarezScraper()
-    return await scraper.extract_property_details(page, url, barrio_name or "Test")
