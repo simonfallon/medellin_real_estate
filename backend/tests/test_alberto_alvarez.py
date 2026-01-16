@@ -30,6 +30,22 @@ class TestAlbertoAlvarez(unittest.IsolatedAsyncioTestCase):
             await browser.close()
             
             validate_property(self, result, expected_source="alberto_alvarez")
+            
+            # Stricter Image Validation
+            self.assertIsInstance(result['images'], list)
+            self.assertTrue(len(result['images']) > 1, "Should capture images")
+            
+            # Verify image URLs
+            for img in result['images']:
+                self.assertTrue(img.startswith('http'), f"Invalid image URL: {img}")
+                
+            # Ensure no duplicates
+            self.assertEqual(len(result['images']), len(set(result['images'])), "All captured images should be unique")
+            
+            # Check main image matches
+            if result['images']:
+                 self.assertEqual(result['image_url'], result['images'][0], "Main image_url should match first image")
+
             print("Successfully scraped and validated single property data.")
 
 

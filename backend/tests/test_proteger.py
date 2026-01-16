@@ -13,7 +13,8 @@ from backend.tests.test_utils import validate_property
 class TestProteger(unittest.IsolatedAsyncioTestCase):
     
     async def test_single_property(self):
-        url = "https://inmobiliariaproteger.com/apartamento-alquiler-la-magnolia-envigado/9420502"
+        # This property has a swiper gallery with many images
+        url = "https://inmobiliariaproteger.com/apartamento-alquiler-el-portal-envigado/9666971"
         print(f"\nTesting single property scrape: {url}")
         
         async with async_playwright() as p:
@@ -21,17 +22,33 @@ class TestProteger(unittest.IsolatedAsyncioTestCase):
             page = await browser.new_page()
             
             scraper = proteger.ProtegerScraper()
-            result = await scraper.extract_property_details(page, url, "La Magnolia")
+            result = await scraper.extract_property_details(page, url, "El Portal")
             
             await browser.close()
             
             print(f"Result: {result}")
             validate_property(self, result, expected_source="proteger")
             
-            # Specific assertions based on known data (if available)
-            self.assertEqual(result['code'], '9420502')
+            # Specific assertions
+            self.assertEqual(result['code'], '9666971')
             self.assertEqual(result['bedrooms'], '3')
-            self.assertTrue('m' in result['area']) # Area should be captured (e.g. 68 m²)
+            self.assertTrue('3.500.000' in result['price'])
+            
+            # Stricter Image Validation
+            self.assertIsInstance(result['images'], list)
+            # We know there are exactly 18 images in this gallery. 
+            # Let's ensure we get at least most of them.
+            self.assertTrue(len(result['images']) >= 5, f"Should capture most images (found {len(result['images'])})")
+            
+            # Validate ALL images
+            for img in result['images']:
+                self.assertTrue(img.startswith('http'), f"Invalid image URL: {img}")
+                self.assertTrue("wasi.co" in img, f"Image should be from wasi.co: {img}")
+                
+            # Ensure no duplicates
+            self.assertEqual(len(result['images']), len(set(result['images'])), "All captured images should be unique")
+                
+            self.assertEqual(result['image_url'], result['images'][0], "Main image_url should match first image")
 
     async def test_search_results(self):
         # Using La Magnolia (377213) as it has properties
