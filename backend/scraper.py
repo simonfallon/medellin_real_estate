@@ -1,5 +1,6 @@
 from .scrapers.arrendamientos_envigado import ArrendamientosEnvigadoScraper
 from .scrapers.alberto_alvarez import AlbertoAlvarezScraper
+from .scrapers.proteger import ProtegerScraper
 from . import storage
 import asyncio
 
@@ -12,16 +13,22 @@ async def scrape_alberto_alvarez_batch():
     scraper = AlbertoAlvarezScraper()
     return await scraper.scrape()
 
+async def scrape_proteger_batch():
+    scraper = ProtegerScraper()
+    return await scraper.scrape()
+
 async def scrape_all_batch():
-    # Run both scrapers concurrently
+    # Run all scrapers concurrently
     envigado_scraper = ArrendamientosEnvigadoScraper()
     alberto_scraper = AlbertoAlvarezScraper()
+    proteger_scraper = ProtegerScraper()
     
-    envigado_results, alberto_results = await asyncio.gather(
+    envigado_results, alberto_results, proteger_results = await asyncio.gather(
         envigado_scraper.scrape(),
-        alberto_scraper.scrape()
+        alberto_scraper.scrape(),
+        proteger_scraper.scrape()
     )
-    return envigado_results + alberto_results
+    return envigado_results + alberto_results + proteger_results
 
 async def scrape_and_save_all(db):
     """
