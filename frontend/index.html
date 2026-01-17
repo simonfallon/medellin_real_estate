@@ -91,6 +91,21 @@
                 <label><i class="fa-solid fa-ruler-combined"></i> Área Máx (m²)</label>
                 <input type="number" id="filterAreaMax" placeholder="Ej: 120">
             </div>
+            <div class="filter-group">
+                <label><i class="fa-solid fa-map-pin"></i> Barrio</label>
+                <div class="multi-select-container">
+                    <div class="multi-select-btn" id="barrioSelectBtn">
+                        <span id="barrioSelectText">Todos</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="dropdown-content" id="barrioDropdown">
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="all" checked> Todos
+                        </label>
+                        <!-- Options will be populated by JS -->
+                    </div>
+                </div>
+            </div>
         </section>
 
         <div class="results-banner hidden" id="resultsBanner">
@@ -108,6 +123,8 @@
                     <option value="price_desc">Precio: Mayor a Menor</option>
                     <option value="area_asc">Área: Menor a Mayor</option>
                     <option value="area_desc">Área: Mayor a Menor</option>
+                    <option value="barrio_asc">Barrio: A a Z</option>
+                    <option value="barrio_desc">Barrio: Z a A</option>
                 </select>
             </div>
         </div>

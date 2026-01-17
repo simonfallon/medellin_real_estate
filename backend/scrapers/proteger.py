@@ -34,6 +34,18 @@ BARRIOS = {
     "Zuniga": "377226" # Using Zuñiga ID
 }
 
+# Unified Name Mapping
+UNIFIED_BARRIOS = {
+    "Abadia": "La Abadia",
+    "Beneditinos": "Loma Benedictinos",
+    "La Abadía": "La Abadia",
+    "La Magnolia": "La Magnolia",
+    "Otra Parte": "Otra Parte",
+    "Pontevedra": "Pontevedra", 
+    "San Marcos": "San Marcos",
+    "Zuniga": "Zuñiga"
+}
+
 class ProtegerScraper(BaseScraper):
     def __init__(self):
         super().__init__(name="Inmobiliaria Proteger", concurrency=3)
@@ -51,7 +63,9 @@ class ProtegerScraper(BaseScraper):
                     min_price=min_p,
                     max_price=max_p
                 )
-                inputs.append((url, barrio_name))
+                
+                unified_name = UNIFIED_BARRIOS.get(barrio_name, barrio_name)
+                inputs.append((url, unified_name))
         return inputs
 
     async def process_search_inputs(self, context: BrowserContext, inputs: List[Tuple[str, str]]) -> List[Tuple[str, str]]:

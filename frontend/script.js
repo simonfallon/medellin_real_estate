@@ -39,12 +39,109 @@ function setupEventListeners() {
             closeModal();
         }
     });
+
+    // Multi-select Barrios Logic
+    setupBarrioFilter();
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.multi-select-container')) {
+            document.getElementById('barrioDropdown').classList.remove('show');
+        }
+    });
+
     document.addEventListener('keydown', (e) => {
         if (!document.getElementById('imageModal').classList.contains('show')) return;
         if (e.key === 'Escape') closeModal();
         if (e.key === 'ArrowLeft') prevModalImage();
         if (e.key === 'ArrowRight') nextModalImage();
     });
+}
+
+// Standardized Barrios List
+const BARRIOS_LIST = [
+    "El Portal", "Jardines", "La Abadia", "La Frontera",
+    "La Magnolia", "Las Flores", "Las Vegas", "Loma Benedictinos",
+    "Otra Parte", "Pontevedra", "San Marcos", "Villagrande", "Zuñiga"
+];
+
+let selectedBarrios = ['all'];
+
+function setupBarrioFilter() {
+    const btn = document.getElementById('barrioSelectBtn');
+    const dropdown = document.getElementById('barrioDropdown');
+    const container = dropdown.querySelector('.dropdown-content');
+
+    // Populate options
+    BARRIOS_LIST.sort().forEach(barrio => {
+        const label = document.createElement('label');
+        label.className = 'checkbox-item';
+        label.innerHTML = `<input type="checkbox" value="${barrio}"> ${barrio}`;
+        dropdown.appendChild(label);
+    });
+
+    // Toggle dropdown
+    btn.addEventListener('click', () => {
+        dropdown.classList.toggle('show');
+    });
+
+    // Checkbox logic
+    const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const val = e.target.value;
+
+            if (val === 'all') {
+                if (e.target.checked) {
+                    // Uncheck others
+                    checkboxes.forEach(c => {
+                        if (c.value !== 'all') c.checked = false;
+                    });
+                    selectedBarrios = ['all'];
+                } else {
+                    // Prevent unchecking 'All' if it's the only one
+                    if (selectedBarrios.length === 1 && selectedBarrios.includes('all')) {
+                        e.target.checked = true;
+                    } else {
+                        selectedBarrios = selectedBarrios.filter(b => b !== 'all');
+                    }
+                }
+            } else {
+                // If specific barrio checked, uncheck 'All'
+                const allCb = dropdown.querySelector('input[value="all"]');
+                allCb.checked = false;
+
+                selectedBarrios = Array.from(checkboxes)
+                    .filter(c => c.checked && c.value !== 'all')
+                    .map(c => c.value);
+
+                // If none selected, check 'All'
+                if (selectedBarrios.length === 0) {
+                    allCb.checked = true;
+                    selectedBarrios = ['all'];
+                } else {
+                    // Ensure 'all' is removed from logic array
+                    selectedBarrios = selectedBarrios.filter(b => b !== 'all');
+                }
+            }
+
+            updateBarrioButtonText();
+            loadProperties();
+        });
+    });
+}
+
+function updateBarrioButtonText() {
+    const textSpan = document.getElementById('barrioSelectText');
+    if (selectedBarrios.includes('all')) {
+        textSpan.innerText = 'Todos';
+    } else {
+        if (selectedBarrios.length === 1) {
+            textSpan.innerText = selectedBarrios[0];
+        } else {
+            textSpan.innerText = `${selectedBarrios.length} seleccionados`;
+        }
+    }
 }
 
 
@@ -84,6 +181,10 @@ function sortProperties(properties) {
                 return parseArea(b.area) - parseArea(a.area);
             case 'created_asc':
                 return new Date(a.created_at) - new Date(b.created_at);
+            case 'barrio_asc':
+                return getBarrioFromLocation(a.location).localeCompare(getBarrioFromLocation(b.location));
+            case 'barrio_desc':
+                return getBarrioFromLocation(b.location).localeCompare(getBarrioFromLocation(a.location));
             case 'created_desc':
             default:
                 return new Date(b.created_at) - new Date(a.created_at);
@@ -126,7 +227,16 @@ function applyFilters(properties) {
             }
         }
 
-        return matchesPrice && matchesArea && matchesBeds && matchesParking && matchesSource;
+        // Barrio Filtering
+        let matchesBarrio = true;
+        if (selectedBarrios && !selectedBarrios.includes('all')) {
+            const pLoc = (p.location || '').toLowerCase().trim();
+            // Check if any selected barrio matches the location partially or fully
+            // Since we standardized keys, we expect good matches, but let's be flexible
+            matchesBarrio = selectedBarrios.some(b => pLoc.includes(b.toLowerCase()));
+        }
+
+        return matchesPrice && matchesArea && matchesBeds && matchesParking && matchesSource && matchesBarrio;
     });
 
     console.log(`Filtering complete: Source="${selectedWebsite}", Before=${properties.length}, After=${filtered.length}`);
@@ -172,21 +282,7 @@ function renderProperties(properties) {
         const hasMultipleImages = images.length > 1;
 
         // Extract location badge
-        let locationBadge = '';
-        if (p.location) {
-            const parts = p.location.split(/,| - /).map(s => s.trim());
-            const specificParts = parts.filter(part => {
-                const lower = part.toLowerCase();
-                return lower !== 'medellin' &&
-                    lower !== 'medellín' &&
-                    lower !== 'envigado' &&
-                    lower !== 'antioquia' &&
-                    lower !== 'colombia';
-            });
-            if (specificParts.length > 0) {
-                locationBadge = specificParts[0];
-            }
-        }
+        let locationBadge = getBarrioFromLocation(p.location);
 
         const sourceMap = {
             'alberto_alvarez': 'Alberto Álvarez',
@@ -376,6 +472,20 @@ async function triggerScrape() {
 }
 
 // Helpers
+function getBarrioFromLocation(location) {
+    if (!location) return '';
+    const parts = location.split(/,| - /).map(s => s.trim());
+    const specificParts = parts.filter(part => {
+        const lower = part.toLowerCase();
+        return lower !== 'medellin' &&
+            lower !== 'medellín' &&
+            lower !== 'envigado' &&
+            lower !== 'antioquia' &&
+            lower !== 'colombia';
+    });
+    return specificParts.length > 0 ? specificParts[0] : '';
+}
+
 function updateResultsCount(count) {
     const banner = document.getElementById('resultsBanner');
     const countSpan = document.getElementById('resultsCount');

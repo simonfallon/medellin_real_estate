@@ -15,6 +15,7 @@ SEARCH_URL_TEMPLATE = (
 )
 
 # Neighborhood Mapping
+# Neighborhood Mapping (Search Parameters)
 BARRIOS = {
     "Abadia": "La+Abadia+",
     "Beneditinos": "Loma+Benedictinos", 
@@ -25,6 +26,19 @@ BARRIOS = {
     "Pontevedra": "Pontevedra", 
     "San Marcos": "San+Marcos",
     "Zuñiga": "Bosques+De+Zuñiga+", 
+}
+
+# Mapping to Centralized/Unified Barrio Names
+UNIFIED_BARRIOS = {
+    "Abadia": "La Abadia",
+    "Beneditinos": "Loma Benedictinos", 
+    "La Abadía": "La Abadia",
+    "El Portal": "El Portal", 
+    "La Magnolia": "La Magnolia",
+    "Otra Parte": "Otra Parte",
+    "Pontevedra": "Pontevedra", 
+    "San Marcos": "San Marcos",
+    "Zuñiga": "Zuñiga", 
 }
 
 class ArrendamientosLasVegasScraper(BaseScraper):
@@ -43,7 +57,10 @@ class ArrendamientosLasVegasScraper(BaseScraper):
                     max_price=max_p,
                     neighborhood=query_param
                 )
-                inputs.append((url, barrio_name))
+                
+                # Use unified name if available, else original
+                unified_name = UNIFIED_BARRIOS.get(barrio_name, barrio_name)
+                inputs.append((url, unified_name))
         return inputs
 
     async def process_search_inputs(self, context: BrowserContext, inputs: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
