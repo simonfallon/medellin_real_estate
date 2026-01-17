@@ -112,6 +112,22 @@ self.assertEqual(len(result['images']), len(set(result['images'])), "Images must
 
 ---
 
+## 5. Frontend: Add Website Icon
+
+To ensure the new source looks premium in the UI, download its favicon using the Google Shared Stuff (S2) service.
+
+1.  **Run the following command** (replace `DOMAIN` and `FILENAME`):
+    *   **Note**: Use `-L` to follow redirects and a User-Agent to avoid blocking.
+    ```bash
+    curl -L -A "Mozilla/5.0" "https://www.google.com/s2/favicons?domain=YOUR_DOMAIN.com&sz=64" -o frontend/assets/images/icons/new_site_name.png
+    ```
+2.  **Verify the File**:
+    *   Run `file frontend/assets/images/icons/new_site_name.png` to ensure it says "PNG image data" and not "HTML document".
+3.  **Naming Convention**:
+    *   The filename MUST match the `source` string exactly (e.g., `new_site_name.png`). If the scraper returns `proteger`, the file must be `proteger.png`.
+
+---
+
 ## Summary Checklist for Implementation
 
 - [ ] Scraper Class created (`backend/scrapers/monitor.py`)
@@ -124,3 +140,4 @@ self.assertEqual(len(result['images']), len(set(result['images'])), "Images must
 - [ ] `frontend/index.html` updated
 - [ ] `frontend/script.js` updated
 - [ ] Verified manually via localhost UI
+- [ ] Website icon added and verified

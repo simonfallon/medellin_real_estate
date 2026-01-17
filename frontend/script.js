@@ -284,6 +284,10 @@ function renderProperties(properties) {
         // Extract location badge
         let locationBadge = getBarrioFromLocation(p.location);
 
+        let normalizedSource = p.source;
+        if (p.source === 'arrendamientosenvigadosa') normalizedSource = 'arrendamientos_envigado';
+
+
         const sourceMap = {
             'alberto_alvarez': 'Alberto Álvarez',
             'arrendamientos_envigado': 'Arrendamientos Envigado',
@@ -305,7 +309,10 @@ function renderProperties(properties) {
             </div>
             <div class="card-content">
                 <div class="card-price">${formatPrice(p.price)}</div>
-                <div class="card-title">${sourceName}</div>
+                <div class="card-title">
+                    <img class="source-icon" src="/static/assets/images/icons/${normalizedSource}.png" alt="${sourceName}" onerror="this.style.display='none'">
+                    ${sourceName}
+                </div>
                 <div class="card-code">
                     <i class="fa-solid fa-hashtag"></i> ${p.code || '--'}
                 </div>
