@@ -59,11 +59,7 @@ function setupEventListeners() {
 }
 
 // Standardized Barrios List
-const BARRIOS_LIST = [
-    "El Portal", "Jardines", "La Abadia", "La Frontera",
-    "La Magnolia", "Las Flores", "Las Vegas", "Loma Benedictinos",
-    "Otra Parte", "Pontevedra", "San Marcos", "Villagrande", "Zuñiga"
-];
+// Standardized Barrios List imported from utils.js
 
 let selectedBarrios = ['all'];
 
@@ -288,14 +284,7 @@ function renderProperties(properties) {
         if (p.source === 'arrendamientosenvigadosa') normalizedSource = 'arrendamientos_envigado';
 
 
-        const sourceMap = {
-            'alberto_alvarez': 'Alberto Álvarez',
-            'arrendamientos_envigado': 'Arrendamientos Envigado',
-            'arrendamientosenvigadosa': 'Arrendamientos Envigado',
-            'proteger': 'Inmobiliaria Proteger',
-            'arrendamientos_las_vegas': 'Arrendamientos Las Vegas'
-        };
-        const sourceName = sourceMap[p.source] || p.source || 'Inmobiliaria';
+        const sourceName = getSourceName(p.source);
 
         card.innerHTML = `
             <div class="card-image-wrapper">
@@ -314,7 +303,12 @@ function renderProperties(properties) {
                     ${sourceName}
                 </div>
                 <div class="card-code">
-                    <i class="fa-solid fa-hashtag"></i> ${p.code || '--'}
+                    <div style="display: flex; align-items: center; gap: 0.4rem;"><i class="fa-solid fa-hashtag"></i> ${p.code || '--'}</div>
+                    ${(p.latitude && p.longitude) ? `
+                    <button class="map-btn" style="background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 5px 15px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                        <i class="fa-solid fa-map-location-dot"></i> Ver Ubicacion
+                    </button>
+                    ` : ''}
                 </div>
                 
                 <div class="card-features">
@@ -325,6 +319,18 @@ function renderProperties(properties) {
                 </div>
             </div>
         `;
+
+        // Map Button Logic
+        if (p.latitude && p.longitude) {
+            const mapBtn = card.querySelector('.map-btn');
+            if (mapBtn) {
+                mapBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const barrio = getBarrioFromLocation(p.location);
+                    openMapModal(p.latitude, p.longitude, sourceName, barrio);
+                });
+            }
+        }
 
         card.addEventListener('click', (e) => {
             if (!e.target.closest('.card-image-wrapper')) {
@@ -478,20 +484,7 @@ async function triggerScrape() {
     }
 }
 
-// Helpers
-function getBarrioFromLocation(location) {
-    if (!location) return '';
-    const parts = location.split(/,| - /).map(s => s.trim());
-    const specificParts = parts.filter(part => {
-        const lower = part.toLowerCase();
-        return lower !== 'medellin' &&
-            lower !== 'medellín' &&
-            lower !== 'envigado' &&
-            lower !== 'antioquia' &&
-            lower !== 'colombia';
-    });
-    return specificParts.length > 0 ? specificParts[0] : '';
-}
+// Helpers - now imported from utils.js
 
 function updateResultsCount(count) {
     const banner = document.getElementById('resultsBanner');
@@ -505,49 +498,57 @@ function updateResultsCount(count) {
     }
 }
 
-function formatPrice(price) {
-    const value = parsePrice(price);
-    // Format with ' as thousand separator
-    return '$' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'");
-}
 
-function parsePrice(str) {
-    if (typeof str === 'number') return str;
-    if (!str) return 0;
-    // Remove non-numeric except dots if used as thousands separator
-    // Assuming format $1.200.000 -> 1200000
-    const clean = str.toString().replace(/[^\d]/g, '');
-    return parseInt(clean) || 0;
-}
+// Map Modal Logic
+let map = null;
+let marker = null;
 
-function parseArea(str) {
-    if (!str) return 0;
-    // Allow digits and dots for decimals (e.g. "72.00 m2")
-    const clean = str.toString().replace(/[^\d.]/g, '');
-    const num = parseFloat(clean) || 0;
-    return Math.round(num);
-}
+function openMapModal(lat, lng, sourceName, locationName) {
+    const modal = document.getElementById('mapModal');
+    const mapTitle = document.getElementById('mapTitle');
+    mapTitle.innerText = sourceName || 'Ubicación';
 
-function showNotification(msg) {
-    const notif = document.getElementById('notification');
-    document.getElementById('notifMessage').innerText = msg;
-    notif.classList.remove('hidden');
-    notif.classList.add('show');
+    modal.classList.remove('hidden');
+    setTimeout(() => modal.classList.add('show'), 10);
+    document.body.style.overflow = 'hidden';
 
-    setTimeout(() => {
-        notif.classList.remove('show');
-        setTimeout(() => notif.classList.add('hidden'), 300);
-    }, 5000);
-}
+    // Initialize map if not already done, or invalidate size
+    if (!map) {
+        if (typeof L === 'undefined') {
+            console.error('Leaflet is not loaded');
+            return;
+        }
+        map = L.map('mapContainer').setView([lat, lng], 16);
 
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
+        // CartoDB Positron (Light colored map)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+    } else {
+        map.setView([lat, lng], 16);
+        setTimeout(() => map.invalidateSize(), 300); // Important for modal resize
+    }
+
+    if (marker) map.removeLayer(marker);
+
+    const popupContent = locationName ? `Apartamento en ${locationName}` : 'Ubicación Exacta';
+    marker = L.marker([lat, lng]).addTo(map)
+        .bindPopup(popupContent)
+        .openPopup();
+
+    // Close logic
+    const closeBtn = modal.querySelector('.modal-close');
+    const closeHandler = () => {
+        const modal = document.getElementById('mapModal');
+        modal.classList.remove('show');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+        document.body.style.overflow = '';
     };
+    closeBtn.onclick = closeHandler;
+    modal.onclick = (e) => {
+        if (e.target.id === 'mapModal') closeHandler();
+    }
 }
+

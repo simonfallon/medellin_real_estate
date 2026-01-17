@@ -637,6 +637,11 @@ nav {
     padding: 2px;
 }
 
+.map-btn:hover {
+    background: var(--primary) !important;
+    color: white !important;
+}
+
 .card-code {
     color: var(--text-muted);
     font-size: 0.85rem;
@@ -644,6 +649,7 @@ nav {
     margin-bottom: 0.5rem;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.4rem;
 }
 
