@@ -99,10 +99,6 @@ class ProtegerScraper(BaseScraper):
     async def _extract_links_from_search_page(self, page: Page, search_url: str) -> List[str]:
         # print(f"[{self.name}] Navigating to {search_url}")
         await page.goto(search_url)
-        try:
-             await page.wait_for_load_state("networkidle", timeout=20000)
-        except:
-             pass
 
         links = []
         anchors = await page.locator("a").all()
@@ -298,7 +294,23 @@ class ProtegerScraper(BaseScraper):
                  }""")
              except: pass
 
-        return {
+        # Extract GPS
+        latitude, longitude = None, None
+        try:
+            coords = await page.evaluate("""() => {
+                return {
+                    lat: window.latitude,
+                    lon: window.longitude
+                }
+            }""")
+            if coords['lat'] and coords['lon']:
+                latitude = float(coords['lat'])
+                longitude = float(coords['lon'])
+        except Exception as e:
+            # print(f"Error extracting GPS: {e}")
+            pass
+
+        data = {
             "code": code,
             "title": title or "Apartamento en Arriendo",
             "location": barrio_name,
@@ -312,5 +324,9 @@ class ProtegerScraper(BaseScraper):
             "images": images,
             "link": link,
             "source": "proteger",
-            "description": description
+            "description": description,
+            "latitude": latitude,
+            "longitude": longitude
         }
+
+        return data

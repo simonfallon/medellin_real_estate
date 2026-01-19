@@ -24,6 +24,8 @@ class Property(Base):
     image_url = Column(String, nullable=True)
     images = Column(String, nullable=True) # JSON list of images
     source = Column(String, default="arrendamientosenvigadosa")
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

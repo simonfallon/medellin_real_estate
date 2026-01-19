@@ -15,3 +15,5 @@ class Property(TypedDict):
     image_url: Optional[str]
     link: str
     source: str
+    latitude: Optional[float]
+    longitude: Optional[float]

@@ -274,6 +274,34 @@ class ArrendamientosLasVegasScraper(BaseScraper):
              match = re.search(r'/(\d+)$', link)
              if match: code = match.group(1)
 
+        # GPS Extraction (Mapbox)
+        latitude = None
+        longitude = None
+        try:
+            # The coordinates are often in the "Improve this map" link
+            # format: https://www.mapbox.com/map-feedback/#/-75.57592/6.1766/15
+            mapbox_link = page.locator("a.mapbox-improve-map").first
+            if await mapbox_link.count() > 0:
+                href = await mapbox_link.get_attribute("href")
+                if href and "#" in href:
+                    # href might be like https://apps.mapbox.com/feedback/#/-75.57592/6.1766/15
+                    parts = href.split("#")[-1].split("/")
+                    # parts might be ['', '-75.57592', '6.1766', '15'] or similar
+                    # Filter out empty strings
+                    coords = [p for p in parts if p]
+                    if len(coords) >= 2:
+                        # Usually it is /lng/lat/zoom
+                        lon_val = float(coords[0])
+                        lat_val = float(coords[1])
+                        
+                        # Sanity check for Medellin/Envigado area
+                        # Lat approx 6.0 to 6.3, Lon approx -75.6 to -75.5
+                        if 6.0 <= lat_val <= 6.4 and -76.0 <= lon_val <= -75.0:
+                            latitude = lat_val
+                            longitude = lon_val
+        except Exception as e:
+            print(f"Error extracting GPS: {e}")
+
         return {
             "code": code,
             "title": title,
@@ -288,5 +316,7 @@ class ArrendamientosLasVegasScraper(BaseScraper):
             "images": images,
             "link": link,
             "source": "arrendamientos_las_vegas",
-            "description": description
+            "description": description,
+            "latitude": latitude,
+            "longitude": longitude
         }

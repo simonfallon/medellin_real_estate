@@ -41,6 +41,12 @@ class TestArrendamientosLasVegas(unittest.IsolatedAsyncioTestCase):
             self.assertTrue('3.400.000' in result['price'])
             self.assertEqual(result['source'], 'arrendamientos_las_vegas')
 
+            # GPS Validation
+            self.assertIsNotNone(result.get('latitude'), "Latitude should be extracted")
+            self.assertIsNotNone(result.get('longitude'), "Longitude should be extracted")
+            self.assertIsInstance(result['latitude'], float)
+            self.assertIsInstance(result['longitude'], float)
+
             # Strict Image Validation
             self.assertIsInstance(result['images'], list)
             # We identified exactly 11 valid images in the carousel for this property

@@ -33,6 +33,12 @@ class TestProteger(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(result['code'], '9666971')
             self.assertEqual(result['bedrooms'], '3')
             self.assertTrue('3.500.000' in result['price'])
+
+            # GPS Validation
+            self.assertIsNotNone(result.get('latitude'), "Latitude should be extracted")
+            self.assertIsNotNone(result.get('longitude'), "Longitude should be extracted")
+            self.assertIsInstance(result['latitude'], float)
+            self.assertIsInstance(result['longitude'], float)
             
             # Stricter Image Validation
             self.assertIsInstance(result['images'], list)

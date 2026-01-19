@@ -70,6 +70,8 @@ def save_properties(db, properties_list):
             existing.bathrooms = item.get('bathrooms', existing.bathrooms)
             existing.parking = item.get('parking', existing.parking)
             existing.estrato = item.get('estrato', existing.estrato)
+            existing.latitude = item.get('latitude', existing.latitude)
+            existing.longitude = item.get('longitude', existing.longitude)
             # Update timestamp
             # existing.updated_at = datetime.utcnow() # SQLAlchemy handles this with onupdate
             

@@ -167,6 +167,13 @@ class AlbertoAlvarezScraper(BaseScraper):
         images = data.get("propertyImages", [])
         image_url = images[0] if images else ""
 
+        # GPS
+        latitude, longitude = None, None
+        try:
+            if data.get("lat"): latitude = float(data.get("lat"))
+            if data.get("lng"): longitude = float(data.get("lng"))
+        except: pass
+
         return {
             "code": code,
             "title": title.upper().strip(),
@@ -181,7 +188,9 @@ class AlbertoAlvarezScraper(BaseScraper):
             "images": images,
             "link": link,
             "source": "alberto_alvarez",
-            "description": "" # JSON might not have description easily? Add if available or empty.
+            "description": "",
+            "latitude": latitude,
+            "longitude": longitude
         }
 
     async def _scrape_dom_details(self, page: Page, url: str, barrio_name: str) -> Optional[Property]:
@@ -308,6 +317,17 @@ class AlbertoAlvarezScraper(BaseScraper):
         except:
             pass
 
+        # GPS from Hidden Inputs
+        latitude, longitude = None, None
+        try:
+            lat_val = await page.locator("#lat").input_value(timeout=1000)
+            lng_val = await page.locator("#lng").input_value(timeout=1000)
+            if lat_val and lng_val:
+                latitude = float(lat_val)
+                longitude = float(lng_val)
+        except:
+            pass
+
         return {
             "code": code,
             "title": title.strip(),
@@ -322,7 +342,9 @@ class AlbertoAlvarezScraper(BaseScraper):
             "images": images,
             "link": url,
             "source": "alberto_alvarez",
-            "description": "" # DOM scrape didn't implement description before?
+            "description": "",
+            "latitude": latitude,
+            "longitude": longitude
         }
 
 

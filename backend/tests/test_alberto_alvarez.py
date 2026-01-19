@@ -30,6 +30,12 @@ class TestAlbertoAlvarez(unittest.IsolatedAsyncioTestCase):
             await browser.close()
             
             validate_property(self, result, expected_source="alberto_alvarez")
+
+            # GPS Validation
+            self.assertIsNotNone(result.get('latitude'), "Latitude should be extracted")
+            self.assertIsNotNone(result.get('longitude'), "Longitude should be extracted")
+            self.assertIsInstance(result['latitude'], float)
+            self.assertIsInstance(result['longitude'], float)
             
             # Stricter Image Validation
             self.assertIsInstance(result['images'], list)
