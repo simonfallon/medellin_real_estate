@@ -28,7 +28,7 @@ repos:
         types: [python]
         files: ^backend/
         # Run pytest on the backend/tests directory
-        args: ["backend/tests"]
+        args: ["backend/tests", "-n", "auto"]
         pass_filenames: false
 
       # Frontend Tests
