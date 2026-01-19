@@ -250,6 +250,26 @@ Reinstall Playwright browsers:
 playwright install --force chromium
 ```
 
+## 🧪 Running Tests
+
+### Backend Tests (Python)
+Run the backend tests using `pytest`:
+
+```bash
+# Ensure virtual environment is active
+# source backend/venv/bin/activate
+pytest -n auto  # Run tests in parallel
+```
+
+### Frontend Tests (JavaScript)
+Run the frontend unit tests using `npm` and `vitest`:
+
+```bash
+cd frontend
+npm install  # Install dependencies (only needed once)
+npm test     # Run tests
+```
+
 ## 🔒 Rate Limiting & Ethics
 
 - The app includes a 2-hour cooldown between scrapes to be respectful to target websites

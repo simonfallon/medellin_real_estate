@@ -4,3 +4,6 @@ playwright
 pydantic
 sqlalchemy
 beautifulsoup4
+pytest
+pytest-asyncio
+pytest-xdist

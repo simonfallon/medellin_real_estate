@@ -54,3 +54,4 @@ Thumbs.db
 backend/__pycache__/
 backend/scrapers/__pycache__/
 backend/tests/__pycache__/
+frontend/node_modules

@@ -1,0 +1,12 @@
+{
+    "name": "sherlock-homes-frontend",
+    "version": "1.0.0",
+    "scripts": {
+        "test": "vitest run"
+    },
+    "devDependencies": {
+        "happy-dom": "^20.3.3",
+        "vitest": "^1.2.0"
+    },
+    "type": "module"
+}

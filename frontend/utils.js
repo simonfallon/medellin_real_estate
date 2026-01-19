@@ -1,6 +1,6 @@
 // Utility Functions
 
-function getBarrioFromLocation(location) {
+export function getBarrioFromLocation(location) {
     if (!location) return '';
     const parts = location.split(/,| - /).map(s => s.trim());
     const specificParts = parts.filter(part => {
@@ -14,13 +14,13 @@ function getBarrioFromLocation(location) {
     return specificParts.length > 0 ? specificParts[0] : '';
 }
 
-function formatPrice(price) {
+export function formatPrice(price) {
     const value = parsePrice(price);
     // Format with ' as thousand separator
     return '$' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'");
 }
 
-function parsePrice(str) {
+export function parsePrice(str) {
     if (typeof str === 'number') return str;
     if (!str) return 0;
     // Remove non-numeric except dots if used as thousands separator
@@ -29,15 +29,16 @@ function parsePrice(str) {
     return parseInt(clean) || 0;
 }
 
-function parseArea(str) {
+export function parseArea(str) {
     if (!str) return 0;
-    // Allow digits and dots for decimals (e.g. "72.00 m2")
-    const clean = str.toString().replace(/[^\d.]/g, '');
-    const num = parseFloat(clean) || 0;
+    // Extract the first number found (integer or decimal)
+    const match = str.toString().match(/(\d+(\.\d+)?)/);
+    if (!match) return 0;
+    const num = parseFloat(match[0]);
     return Math.round(num);
 }
 
-function showNotification(msg) {
+export function showNotification(msg) {
     const notif = document.getElementById('notification');
     document.getElementById('notifMessage').innerText = msg;
     notif.classList.remove('hidden');
@@ -49,7 +50,7 @@ function showNotification(msg) {
     }, 5000);
 }
 
-function debounce(func, wait) {
+export function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
         const later = () => {
@@ -61,13 +62,13 @@ function debounce(func, wait) {
     };
 }
 
-const BARRIOS_LIST = [
+export const BARRIOS_LIST = [
     "El Portal", "Jardines", "La Abadia", "La Frontera",
     "La Magnolia", "Las Flores", "Las Vegas", "Loma Benedictinos",
     "Otra Parte", "Pontevedra", "San Marcos", "Villagrande", "Zuñiga"
 ];
 
-const SOURCE_NAME_MAP = {
+export const SOURCE_NAME_MAP = {
     'alberto_alvarez': 'Alberto Álvarez',
     'arrendamientos_envigado': 'Arrendamientos Envigado',
     'arrendamientosenvigadosa': 'Arrendamientos Envigado',
@@ -75,6 +76,6 @@ const SOURCE_NAME_MAP = {
     'arrendamientos_las_vegas': 'Arrendamientos Las Vegas'
 };
 
-function getSourceName(slug) {
+export function getSourceName(slug) {
     return SOURCE_NAME_MAP[slug] || slug || 'Inmobiliaria';
 }
