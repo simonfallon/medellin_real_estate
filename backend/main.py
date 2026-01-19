@@ -32,10 +32,52 @@ import os
 # Mount static files
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
+
 @app.get("/api/properties")
 def read_properties(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db)):
-    properties = db.query(database.Property).offset(skip).limit(limit).all()
+    properties = db.query(database.Property).order_by(database.Property.created_at.desc()).offset(skip).limit(limit).all()
     return properties
+
+@app.get("/api/properties/locations")
+def read_property_locations(db: Session = Depends(database.get_db)):
+    # Fetch only necessary fields for the map to be efficient
+    # Filter out properties without coordinates
+    properties = db.query(
+        database.Property.id,
+        database.Property.latitude,
+        database.Property.longitude,
+        database.Property.title,
+        database.Property.price,
+        database.Property.source,
+        database.Property.link,
+        database.Property.image_url,
+        database.Property.location,
+        database.Property.location,
+        database.Property.code,
+        database.Property.images
+    ).filter(
+        database.Property.latitude != None,
+        database.Property.longitude != None
+    ).all()
+    
+    # Convert to list of dicts since query returns tuples
+    return [
+        {
+            "id": p.id,
+            "latitude": p.latitude,
+            "longitude": p.longitude,
+            "title": p.title,
+            "price": p.price,
+            "source": p.source,
+            "link": p.link,
+            "image_url": p.image_url,
+            "location": p.location,
+            "location": p.location,
+            "code": p.code,
+            "images": p.images
+        }
+        for p in properties
+    ]
 
 
 

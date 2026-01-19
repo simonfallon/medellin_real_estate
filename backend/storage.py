@@ -1,6 +1,20 @@
 import json
 from . import database
 import re
+import math
+
+ENVIGADO_PARK_COORDS = (6.170089, -75.587481)
+MAX_DISTANCE_KM = 10
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    R = 6371  # Earth radius in km
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2) * math.sin(dlat / 2) + \
+        math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * \
+        math.sin(dlon / 2) * math.sin(dlon / 2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
 
 def parse_price(price_str):
     if not price_str:
@@ -26,6 +40,20 @@ def save_properties(db, properties_list):
     model_columns = {c.name for c in database.Property.__table__.columns}
     
     for item in unique_data:
+        # Filter by location (max 10km from Envigado Park)
+        lat_raw = item.get('latitude')
+        lon_raw = item.get('longitude')
+        if lat_raw is not None and lon_raw is not None:
+            try:
+                lat = float(lat_raw)
+                lon = float(lon_raw)
+                # Filter by distance from Envigado Park
+                if calculate_distance(lat, lon, *ENVIGADO_PARK_COORDS) > MAX_DISTANCE_KM:
+                    item['latitude'] = None
+                    item['longitude'] = None
+            except (ValueError, TypeError):
+                pass
+
         # Check duplicates
         existing = db.query(database.Property).filter(database.Property.link == item['link']).first()
         
