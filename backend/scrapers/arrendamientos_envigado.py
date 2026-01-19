@@ -1,6 +1,6 @@
 import asyncio
 import re
-from typing import List, Dict, Any, Tuple
+from typing import List, Tuple
 from playwright.async_api import Page, BrowserContext
 
 from .base import BaseScraper
@@ -23,8 +23,9 @@ BARRIOS = {
     "Pontevedra": "6844",
     "San Marcos": "6823",
     "Villagrande": "6825",
-    "Zuñiga": "8579"
+    "Zuñiga": "8579",
 }
+
 
 class ArrendamientosEnvigadoScraper(BaseScraper):
     def __init__(self):
@@ -40,22 +41,24 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
                 url = SEARCH_URL_TEMPLATE.format(
                     barrio_id=barrio_id,
                     min_price=price_range["min"],
-                    max_price=price_range["max"]
+                    max_price=price_range["max"],
                 )
                 urls_to_scrape.append((url, barrio_name))
         return urls_to_scrape
 
-    async def process_search_inputs(self, context: BrowserContext, inputs: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
+    async def process_search_inputs(
+        self, context: BrowserContext, inputs: List[Tuple[str, str]]
+    ) -> List[Tuple[str, str]]:
         """
         Visits each search URL and extracts property links.
         """
-        # We can parallelize the search page processing too if we want, 
+        # We can parallelize the search page processing too if we want,
         # but for now let's keep it simple or use a smaller semaphore if needed.
         # The base class doesn't enforce how we process these, but returns a flat list.
-        
+
         # We'll use a local semaphore for search pages
         sem = asyncio.Semaphore(5)
-        
+
         async def process_single_search(url, barrio_name):
             async with sem:
                 page = await context.new_page()
@@ -70,7 +73,7 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
 
         tasks = [process_single_search(url, barrio) for url, barrio in inputs]
         results_lists = await asyncio.gather(*tasks)
-        
+
         # Flatten results
         all_links = []
         seen_links = set()
@@ -79,16 +82,18 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
                 if link not in seen_links:
                     seen_links.add(link)
                     all_links.append((link, barrio))
-                    
+
         return all_links
 
-    async def _extract_links_from_search_page(self, page: Page, search_url: str) -> List[str]:
+    async def _extract_links_from_search_page(
+        self, page: Page, search_url: str
+    ) -> List[str]:
         await page.goto(search_url)
         try:
             await page.wait_for_load_state("networkidle", timeout=10000)
         except:
             pass
-        
+
         try:
             await page.wait_for_selector("a.link-footer-black", timeout=10000)
         except:
@@ -103,13 +108,15 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
                 if not href.startswith("http"):
                     href = ARRENDAMIENTOS_ENVIGADO_BASE_URL + href.lstrip("/")
                 links.append(href)
-        
+
         return list(set(links))
 
-    async def extract_property_details(self, page: Page, link: str, barrio_name: str) -> Property:
+    async def extract_property_details(
+        self, page: Page, link: str, barrio_name: str
+    ) -> Property:
         await page.goto(link)
         await page.wait_for_load_state("domcontentloaded")
-        
+
         # Scrape details
         title = ""
         try:
@@ -119,10 +126,12 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
                 title = await title_el.inner_text()
         except Exception:
             pass
-        
+
         async def get_list_value(label):
             try:
-                item = page.locator("li.list-group-item", has=page.locator(f"span", has_text=label))
+                item = page.locator(
+                    "li.list-group-item", has=page.locator("span", has_text=label)
+                )
                 if await item.count() > 0:
                     spans = item.locator("span")
                     count = await spans.count()
@@ -138,44 +147,57 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
         bedrooms = await get_list_value("Alcobas")
         bathrooms = await get_list_value("Baños")
         parking = await get_list_value("Parqueadero")
-        
+
         description = ""
         try:
             desc_header = page.locator("p", has_text="DESCRIPCIÓN")
             if await desc_header.count() > 0:
-                description = await desc_header.locator("xpath=following-sibling::p[1]").inner_text()
+                description = await desc_header.locator(
+                    "xpath=following-sibling::p[1]"
+                ).inner_text()
         except:
             pass
 
         # Icon fallback
         async def get_value_by_icon(icon_keyword):
             try:
-                xpath = f"//img[contains(@src, '{icon_keyword}')]/following-sibling::span"
+                xpath = (
+                    f"//img[contains(@src, '{icon_keyword}')]/following-sibling::span"
+                )
                 el = page.locator(xpath).first
                 if await el.count() > 0:
                     return await el.inner_text()
             except:
-                 pass
+                pass
             return ""
 
-        if not bedrooms: bedrooms = await get_value_by_icon("bed")
-        if not bathrooms: bathrooms = await get_value_by_icon("bathtub")
-        if not parking: parking = await get_value_by_icon("car")
+        if not bedrooms:
+            bedrooms = await get_value_by_icon("bed")
+        if not bathrooms:
+            bathrooms = await get_value_by_icon("bathtub")
+        if not parking:
+            parking = await get_value_by_icon("car")
 
         # Regex fallback
         if not bedrooms:
-            match = re.search(r"(\d+)\s*(?:alcobas|habitaciones)", description, re.IGNORECASE)
-            if match: bedrooms = match.group(1)
-                
+            match = re.search(
+                r"(\d+)\s*(?:alcobas|habitaciones)", description, re.IGNORECASE
+            )
+            if match:
+                bedrooms = match.group(1)
+
         if not bathrooms:
             match = re.search(r"(\d+)\s*baños", description, re.IGNORECASE)
-            if match: bathrooms = match.group(1)
-                
+            if match:
+                bathrooms = match.group(1)
+
         if not parking:
             match = re.search(r"(\d+)\s*parqueaderos?", description, re.IGNORECASE)
-            if match: parking = match.group(1)
-            elif "parqueadero" in description.lower(): parking = "1"
-        
+            if match:
+                parking = match.group(1)
+            elif "parqueadero" in description.lower():
+                parking = "1"
+
         images = []
         carousel_imgs = await page.locator(".carousel-item img").all()
         for img in carousel_imgs:
@@ -184,16 +206,16 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
                 if "logo-ae-new.png" in src or "assets/" in src:
                     continue
                 images.append(src)
-                
+
         # Extract code from URL
         code = ""
         try:
-            code_match = re.search(r'(?:codigo|inmueble)=(\d+)', link)
+            code_match = re.search(r"(?:codigo|inmueble)=(\d+)", link)
             if code_match:
                 code = code_match.group(1)
         except:
             pass
-        
+
         # Default image if none found
         image_url = images[0] if images else ""
 
@@ -211,7 +233,5 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
             "images": images,
             "image_url": image_url,
             "link": link,
-            "source": "arrendamientos_envigado"
+            "source": "arrendamientos_envigado",
         }
-
-

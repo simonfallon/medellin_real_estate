@@ -1,5 +1,6 @@
 from typing import TypedDict, List, Optional
 
+
 class Property(TypedDict):
     code: str
     title: str

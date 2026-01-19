@@ -6,36 +6,17 @@ A powerful web scraping and property aggregation platform for finding rental apa
 
 ## ✨ Features
 
-- 🔍 **Automated Web Scraping**: Scrapes multiple real estate websites simultaneously
-- 🎯 **Smart Filtering**: Filter by price, area, bedrooms, bathrooms, and parking
-- 📊 **Multiple Sorting Options**: Sort by price, area, or date added
-- 🏘️ **Neighborhood Focus**: Targets premium neighborhoods in Envigado
-- 💾 **SQLite Database**: Stores and deduplicates property listings
-- 🎨 **Modern UI**: Beautiful, responsive interface with smooth animations
-- ⚡ **Real-time Updates**: Live scraping with progress indicators
-- 🔄 **Smart Caching**: Prevents excessive scraping with 2-hour cooldown
+-  **Automated Web Scraping**: Scrapes multiple real estate websites simultaneously
+-  **SQLite Database**: Stores and deduplicates property listings.
+-  **Filtering and Sorting**: Filter and sort by multiple options.
+-  **Visualization Map**: Displays properties exact location on a map.
 
 ## 🎯 Supported Websites
 
-1. **Arrendamientos Envigado** - Local real estate agency
-2. **Alberto Álvarez** - Premium real estate agency
-
-## 🏘️ Targeted Neighborhoods
-
-The scraper focuses on premium neighborhoods in Envigado:
-- El Portal
-- Jardines
-- La Abadia
-- La Frontera
-- La Magnolia
-- Las Flores
-- Las Vegas
-- Loma Benedictinos
-- Pontevedra
-- San Marcos
-- Villagrande
-- Zuñiga
-- Otra Parte
+1. **Arrendamientos Envigado** 
+2. **Alberto Álvarez**
+3. **Inmobiliaria Proteger**
+4. **Arrendamientos Las Vegas**
 
 ## 📋 Prerequisites
 
@@ -77,6 +58,14 @@ Playwright requires browser binaries to be installed:
 
 ```bash
 playwright install chromium
+```
+
+### 5. Setup Pre-commit Hooks
+
+To ensure code quality and run tests automatically before committing:
+
+```bash
+pre-commit install
 ```
 
 ## 🎮 Usage

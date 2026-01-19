@@ -1,0 +1,8 @@
+[tool.ruff]
+# E711: Comparison to None should be `cond is not None` (Incorrect for SQLAlchemy)
+# E402: Module level import not at top of file (Sometimes needed for circular imports or init order)
+# E722: Do not use bare `except` (Acceptable for scraping resilience)
+ignore = ["E711", "E402", "E722"]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]

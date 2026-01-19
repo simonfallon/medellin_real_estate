@@ -1,0 +1,41 @@
+repos:
+  # Backend - Python
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.1.13
+    hooks:
+      # Run the linter.
+      - id: ruff
+        args: [ --fix ]
+      # Run the formatter.
+      - id: ruff-format
+
+  # Frontend - Prettier (Formatter)
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8  # Use a recent version
+    hooks:
+      - id: prettier
+        types_or: [css, javascript, html, json]
+
+  # Local Hooks (Tests)
+  - repo: local
+    hooks:
+      # Backend Tests
+      - id: pytest
+        name: Backend Tests (pytest)
+        entry: backend/venv/bin/pytest
+        language: system
+        types: [python]
+        files: ^backend/
+        # Run pytest on the backend/tests directory
+        args: ["backend/tests"]
+        pass_filenames: false
+
+      # Frontend Tests
+      - id: vitest
+        name: Frontend Tests (vitest)
+        entry: bash -c 'cd frontend && npm install && npm test'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+        types_or: [javascript, css, html]

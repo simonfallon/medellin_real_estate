@@ -7,6 +7,7 @@ DATABASE_URL = "sqlite:///./real_estate.db"
 
 Base = declarative_base()
 
+
 class Property(Base):
     __tablename__ = "properties"
 
@@ -14,7 +15,7 @@ class Property(Base):
     code = Column(String, index=True)
     title = Column(String, index=True)
     location = Column(String, index=True)
-    price = Column(String)  # Storing as string to keep formatting for now, or float if cleaned
+    price = Column(String)
     area = Column(String)
     bedrooms = Column(String)
     bathrooms = Column(String)
@@ -22,18 +23,21 @@ class Property(Base):
     estrato = Column(String, nullable=True)
     link = Column(String, unique=True, index=True)
     image_url = Column(String, nullable=True)
-    images = Column(String, nullable=True) # JSON list of images
+    images = Column(String, nullable=True)  # JSON list of images
     source = Column(String, default="arrendamientosenvigadosa")
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 def init_db():
     Base.metadata.create_all(bind=engine)
+
 
 def get_db():
     db = SessionLocal()
