@@ -1,8 +1,4 @@
-import {
-  getSourceName,
-  formatPrice,
-  getBarrioFromLocation,
-} from "/static/utils.js?v=1";
+import { getSourceName, formatPrice } from "/static/utils.js";
 
 let map = null;
 let marker = null;

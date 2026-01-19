@@ -111,6 +111,8 @@ async def trigger_batch_scrape(
             data = await scraper.scrape_proteger_batch()
         elif source == "arrendamientos_las_vegas":
             data = await scraper.scrape_arrendamientos_las_vegas_batch()
+        elif source == "escala_inmobiliaria":
+            data = await scraper.scrape_escala_inmobiliaria_batch()
         else:
             data = await scraper.scrape_all_batch()
 

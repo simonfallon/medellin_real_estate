@@ -2,6 +2,7 @@ from .scrapers.arrendamientos_envigado import ArrendamientosEnvigadoScraper
 from .scrapers.alberto_alvarez import AlbertoAlvarezScraper
 from .scrapers.proteger import ProtegerScraper
 from .scrapers.arrendamientos_las_vegas import ArrendamientosLasVegasScraper
+from .scrapers.escala_inmobiliaria import EscalaInmobiliariaScraper
 from . import storage
 import asyncio
 
@@ -27,25 +28,39 @@ async def scrape_arrendamientos_las_vegas_batch():
     return await scraper.scrape()
 
 
+async def scrape_escala_inmobiliaria_batch():
+    scraper = EscalaInmobiliariaScraper()
+    return await scraper.scrape()
+
+
 async def scrape_all_batch():
     # Run all scrapers concurrently
     envigado_scraper = ArrendamientosEnvigadoScraper()
     alberto_scraper = AlbertoAlvarezScraper()
     proteger_scraper = ProtegerScraper()
     las_vegas_scraper = ArrendamientosLasVegasScraper()
+    escala_scraper = EscalaInmobiliariaScraper()
 
     (
         envigado_results,
         alberto_results,
         proteger_results,
         las_vegas_results,
+        escala_results,
     ) = await asyncio.gather(
         envigado_scraper.scrape(),
         alberto_scraper.scrape(),
         proteger_scraper.scrape(),
         las_vegas_scraper.scrape(),
+        escala_scraper.scrape(),
     )
-    return envigado_results + alberto_results + proteger_results + las_vegas_results
+    return (
+        envigado_results
+        + alberto_results
+        + proteger_results
+        + las_vegas_results
+        + escala_results
+    )
 
 
 async def scrape_and_save_all(db):

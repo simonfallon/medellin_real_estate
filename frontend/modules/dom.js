@@ -5,12 +5,9 @@ import {
   getBarrioFromLocation,
   BARRIOS_LIST,
   showNotification,
-} from "/static/utils.js?v=1";
-import {
-  openSingleMapModal,
-  openAllMapsModal,
-} from "/static/modules/map.js?v=1";
-import { fetchLocations } from "/static/modules/api.js?v=1";
+} from "/static/utils.js";
+import { openSingleMapModal, openAllMapsModal } from "/static/modules/map.js";
+import { fetchLocations } from "/static/modules/api.js";
 
 let modalImages = [];
 let modalCurrentIndex = 0;

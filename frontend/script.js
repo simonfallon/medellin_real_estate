@@ -2,18 +2,15 @@ import {
   fetchProperties,
   scrapeSource,
   fetchLocations,
-} from "/static/modules/api.js?v=1";
-import {
-  filterProperties,
-  sortProperties,
-} from "/static/modules/filters.js?v=1";
+} from "/static/modules/api.js";
+import { filterProperties, sortProperties } from "/static/modules/filters.js";
 import {
   renderProperties,
   setupBarrioFilter,
   initImageModal,
-} from "/static/modules/dom.js?v=1";
-import { openAllMapsModal } from "/static/modules/map.js?v=1";
-import { debounce, showNotification } from "/static/utils.js?v=1";
+} from "/static/modules/dom.js";
+import { openAllMapsModal } from "/static/modules/map.js";
+import { debounce, showNotification } from "/static/utils.js";
 
 console.log("Script.js loaded");
 

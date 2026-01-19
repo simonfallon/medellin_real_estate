@@ -26,6 +26,14 @@ A URL to a specific, active property listing to use for the single-property test
 The pattern used to filter by price, neighborhood, etc.
 `[INSERT_SEARCH_URL_TEMPLATE_HERE]`
 
+**5. Explicit Data for Verification:**
+Collect specific values from the "Sample Property" to verify against later.
+- **Price**: (e.g., "$3.500.000")
+- **Area**: (e.g., "70 m2")
+- **Images**: (e.g., "15 images, starts with https://...")
+- **GPS**: (Does the site have coordinates in the source, window object, or a map link?)
+
+
 ---
 
 ## 1. Backend: Implement the Scraper Logic
@@ -58,6 +66,10 @@ To ensure the "Barrio" filter works correctly on the frontend, we must standardi
 *   [ ] **Container Targeting**: If the page has "Suggested Properties" at the bottom, **do not** scrape images from there. Identify the specific CSS container for the main gallery (e.g., `.main-carousel` or `.no-scroll`).
 *   [ ] **High-Res Source**: If the site hosts low-res thumbnails and high-res versions (e.g., on a separate CDN like `pictures.domus.la`), try to capture the high-res URLs.
 *   [ ] **Uniqueness**: Ensure the list of images has no duplicates.
+
+### Data Completeness:
+*   [ ] **GPS Extraction**: Check `window` objects (e.g., `window.inmueble`), map iframes, or "Waze/Google Maps" buttons for latitude/longitude.
+*   [ ] **Name Mapping**: Ensure the scraper source name is mapped to a human-readable format in `frontend/utils.js` (e.g., `escala_inmobiliaria` -> "Escala Inmobiliaria").
 
 ---
 

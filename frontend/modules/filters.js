@@ -1,8 +1,4 @@
-import {
-  parsePrice,
-  parseArea,
-  getBarrioFromLocation,
-} from "/static/utils.js?v=1";
+import { parsePrice, parseArea, getBarrioFromLocation } from "/static/utils.js";
 
 export function sortProperties(properties, sortBy) {
   // Create a shallow copy to avoid mutating original array
