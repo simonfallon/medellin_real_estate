@@ -29,6 +29,7 @@ class Property(Base):
     longitude = Column(Float, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
 
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})

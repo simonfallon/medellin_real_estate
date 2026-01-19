@@ -34,6 +34,7 @@ def read_properties(
 ):
     properties = (
         db.query(database.Property)
+        .filter(database.Property.deleted_at == None)
         .order_by(database.Property.created_at.desc())
         .offset(skip)
         .limit(limit)
@@ -62,6 +63,7 @@ def read_property_locations(db: Session = Depends(database.get_db)):
             database.Property.images,
         )
         .filter(database.Property.latitude != None, database.Property.longitude != None)
+        .filter(database.Property.deleted_at == None)
         .all()
     )
 
