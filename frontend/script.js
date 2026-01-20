@@ -158,9 +158,14 @@ async function handleScrape() {
   const websiteSelect = document.getElementById("websiteSelect");
   const selectedWebsite = websiteSelect.value;
   const forceUpdate = document.getElementById("forceUpdate").checked;
+  const grid = document.getElementById("propertiesGrid");
 
   btn.disabled = true;
   icon.classList.add("fa-spin");
+
+  // Show loading state and hide current properties
+  grid.innerHTML =
+    '<div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i><p>Actualizando propiedades...</p></div>';
 
   if (forceUpdate) {
     showNotification("Iniciando escaneo masivo con actualización forzada...");
@@ -187,6 +192,9 @@ async function handleScrape() {
     loadProperties();
   } catch (e) {
     showNotification("Error en la búsqueda: " + e.message);
+    // Reload properties even on error to show what we have
+    allProperties = [];
+    loadProperties();
   } finally {
     btn.disabled = false;
     icon.classList.remove("fa-spin");

@@ -109,13 +109,13 @@ class UribienesScraper(BaseScraper):
 
         # Wait for page to be fully loaded
         try:
-            await page.wait_for_load_state("networkidle", timeout=10000)
+            await page.wait_for_load_state("networkidle", timeout=5000)
         except:
             pass
 
         # Wait for property cards to load (they load dynamically)
         try:
-            await page.wait_for_selector('a[href^="/inmuebles/"]', timeout=10000)
+            await page.wait_for_selector('a[href^="/inmuebles/"]', timeout=5000)
             # Give extra time for all content to render
             await page.wait_for_timeout(2000)
         except:

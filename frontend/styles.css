@@ -197,7 +197,8 @@ nav {
   border-radius: 40px;
   margin-top: 2rem;
   /* Removed overflow: hidden to allow dropdown to show */
-  z-index: 60; /* Ensure it sits above filters */
+  z-index: 60;
+  /* Ensure it sits above filters */
 }
 
 .hero-section::before {
@@ -213,7 +214,8 @@ nav {
   opacity: 0.15;
   z-index: -1;
   filter: saturate(1.2) brightness(0.8);
-  border-radius: 40px; /* Added manual radius */
+  border-radius: 40px;
+  /* Added manual radius */
 }
 
 .hero-section::after {
@@ -229,7 +231,8 @@ nav {
     var(--bg-dark) 80%
   );
   z-index: -1;
-  border-radius: 40px; /* Added manual radius */
+  border-radius: 40px;
+  /* Added manual radius */
 }
 
 .hero-content {
@@ -1082,4 +1085,47 @@ nav {
 
 .custom-select-wrapper.open .custom-select-trigger i.fa-chevron-down {
   transform: rotate(180deg);
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 2rem;
+  padding: 4rem 2rem;
+  grid-column: 1 / -1;
+  /* Span all columns in grid */
+  width: 100%;
+}
+
+.loading-state i {
+  font-size: 4rem;
+  color: var(--primary);
+  animation: spin 1s linear infinite;
+  filter: drop-shadow(0 0 20px var(--primary-glow));
+}
+
+.loading-state p {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: 0.5px;
+  text-align: center;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
