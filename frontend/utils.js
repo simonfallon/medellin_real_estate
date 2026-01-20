@@ -87,6 +87,7 @@ export const SOURCE_NAME_MAP = {
   proteger: "Inmobiliaria Proteger",
   arrendamientos_las_vegas: "Arrendamientos Las Vegas",
   escala_inmobiliaria: "Escala Inmobiliaria",
+  uribienes: "Uribienes",
 };
 
 export function getSourceName(slug) {

@@ -10,29 +10,29 @@ This document serves as a comprehensive guide for adding a new real estate websi
 
 Before starting, gather the following information. Fill in these details when requesting a new scraper implementation.
 
-**1. Target Website URL:**
-`[INSERT_MAIN_URL_HERE]`
-
 **2. Neighborhood Mapping (BARRIOS):**
 How does the website encode neighborhoods in its search URL?
-`[INSERT_BARRIOS_MAPPING_INFO_HERE]`
-*Example: "Envigado" -> "city=123&zone=456"*
+`[https://uribienes.com/inmuebles/arriendo?city=5266&type=1&pcmin=2500000&pcmax=3500000&neighborhood=Jardines+]`
+Just plan barrio name separated with + and ending with + 
 
 **3. Sample Property for Testing:**
 A URL to a specific, active property listing to use for the single-property test.
-`[INSERT_SAMPLE_PROPERTY_URL_HERE]`
+`[https://uribienes.com/inmuebles/215327]`
 
 **4. Search Results URL Pattern:**
 The pattern used to filter by price, neighborhood, etc.
-`[INSERT_SEARCH_URL_TEMPLATE_HERE]`
+`[https://uribienes.com/inmuebles/arriendo?city=5266&type=1&pcmin=2500000&pcmax=3500000&neighborhood=Jardines+&minarea=50&maxarea=100]`
 
 **5. Explicit Data for Verification:**
-Collect specific values from the "Sample Property" to verify against later.
-- **Price**: (e.g., "$3.500.000")
-- **Area**: (e.g., "70 m2")
-- **Images**: (e.g., "15 images, starts with https://...")
-- **GPS**: (Does the site have coordinates in the source, window object, or a map link?)
+3 Habitaciones
+2 Baños
+1 Parqueadero
+90 m²
+Precio total: $ 3.500.00
 
+Sample image address: https://s3-us-west-2.amazonaws.com/pictures.domus.la/inmobiliaria_871/wm/215327_1_1766532444.jpg
+
+HAS GPS LOCATION
 
 ---
 
