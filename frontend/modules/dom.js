@@ -351,3 +351,57 @@ function updateModalImage() {
   img.src = modalImages[modalCurrentIndex];
   counter.innerText = `${modalCurrentIndex + 1}/${modalImages.length}`;
 }
+
+export function setupCustomDropdown(onChange) {
+  const wrapper = document.querySelector(".custom-select-wrapper");
+  const trigger = document.querySelector(".custom-select-trigger");
+  const options = document.querySelectorAll(".custom-option");
+  const hiddenInput = document.getElementById("websiteSelect");
+  const triggerContent = document.querySelector(
+    ".custom-select-trigger .selected-content",
+  );
+
+  if (!wrapper || !trigger || !hiddenInput) return;
+
+  // Toggle open
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    wrapper.classList.toggle("open");
+  });
+
+  // Select option
+  options.forEach((option) => {
+    option.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const value = option.getAttribute("data-value");
+
+      // Update hidden input
+      hiddenInput.value = value;
+
+      // Update UI
+      options.forEach((opt) => opt.classList.remove("selected"));
+      option.classList.add("selected");
+
+      // Clone the content of the selected option to the trigger
+      // excluding the checkmark if we had one, but here structure matches
+      // We need to preserve the chevron in the trigger, so just replace the content div
+      // But trigger has .selected-content separate from chevron.
+
+      // Extract content from option (icon/img + text)
+      const content = option.innerHTML;
+      triggerContent.innerHTML = content;
+
+      wrapper.classList.remove("open");
+
+      // Callback
+      if (onChange) onChange(value);
+    });
+  });
+
+  // Close on click outside
+  document.addEventListener("click", (e) => {
+    if (!wrapper.contains(e.target)) {
+      wrapper.classList.remove("open");
+    }
+  });
+}

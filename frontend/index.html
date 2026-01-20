@@ -59,19 +59,63 @@
 
           <div class="search-bar-container">
             <div class="search-input-wrapper">
-              <i class="fa-solid fa-location-dot"></i>
-              <select id="websiteSelect" class="url-input">
-                <option value="all">Todas las fuentes</option>
-                <option value="alberto_alvarez">Alberto Alvarez</option>
-                <option value="arrendamientos_envigado">
-                  Arrendamientos Envigado
-                </option>
-                <option value="proteger">Inmobiliaria Proteger</option>
-                <option value="arrendamientos_las_vegas">
-                  Arrendamientos Las Vegas
-                </option>
-                <option value="escala_inmobiliaria">Escala Inmobiliaria</option>
-              </select>
+              <input type="hidden" id="websiteSelect" value="all" />
+              <div class="custom-select-wrapper">
+                <div class="custom-select-trigger">
+                  <div class="selected-content">
+                    <i class="fa-solid fa-earth-americas"></i>
+                    <span>Todas las fuentes</span>
+                  </div>
+                  <i class="fa-solid fa-chevron-down"></i>
+                </div>
+                <div class="custom-options">
+                  <div class="custom-option selected" data-value="all">
+                    <i class="fa-solid fa-earth-americas"></i>
+                    <span>Todas las fuentes</span>
+                  </div>
+                  <div class="custom-option" data-value="alberto_alvarez">
+                    <img
+                      src="/static/assets/images/icons/alberto_alvarez.png"
+                      alt="Alberto Alvarez"
+                    />
+                    <span>Alberto Alvarez</span>
+                  </div>
+                  <div
+                    class="custom-option"
+                    data-value="arrendamientos_envigado"
+                  >
+                    <img
+                      src="/static/assets/images/icons/arrendamientos_envigado.png"
+                      alt="Arrendamientos Envigado"
+                    />
+                    <span>Arrendamientos Envigado</span>
+                  </div>
+                  <div class="custom-option" data-value="proteger">
+                    <img
+                      src="/static/assets/images/icons/proteger.png"
+                      alt="Inmobiliaria Proteger"
+                    />
+                    <span>Inmobiliaria Proteger</span>
+                  </div>
+                  <div
+                    class="custom-option"
+                    data-value="arrendamientos_las_vegas"
+                  >
+                    <img
+                      src="/static/assets/images/icons/arrendamientos_las_vegas.png"
+                      alt="Arrendamientos Las Vegas"
+                    />
+                    <span>Arrendamientos Las Vegas</span>
+                  </div>
+                  <div class="custom-option" data-value="escala_inmobiliaria">
+                    <img
+                      src="/static/assets/images/icons/escala_inmobiliaria.png"
+                      alt="Escala Inmobiliaria"
+                    />
+                    <span>Escala Inmobiliaria</span>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="divider"></div>
             <div class="update-toggle">

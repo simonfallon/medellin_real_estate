@@ -8,6 +8,7 @@ import {
   renderProperties,
   setupBarrioFilter,
   initImageModal,
+  setupCustomDropdown,
 } from "/static/modules/dom.js";
 import { openAllMapsModal } from "/static/modules/map.js";
 import { debounce, showNotification } from "/static/utils.js";
@@ -107,12 +108,15 @@ function setupEventListeners() {
     const el = document.getElementById(id);
     if (el) {
       if (id === "websiteSelect") {
-        el.addEventListener("change", () => loadProperties());
+        // Native select listener removed, handled by custom dropdown
       } else {
         el.addEventListener("input", debounce(loadProperties, 500));
       }
     }
   });
+
+  // Custom Dropdown
+  setupCustomDropdown(() => loadProperties());
 
   // Sort
   const sortSelect = document.getElementById("sortSelect");
