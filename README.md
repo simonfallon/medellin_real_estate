@@ -1,5 +1,8 @@
 # 🏠 Sherlock Homes - Premium Medellin Real Estate Finder
 
+> [!WARNING]
+> **Legal Disclaimer**: This software is for educational and research purposes only. Use it responsibly and at your own risk. See [Legal Disclaimer](legal_disclaimer.md) for full terms.
+
 A powerful web scraping and property aggregation platform for finding rental apartments in Medellín, Colombia. This application automatically scrapes multiple real estate websites, aggregates listings, and presents them in a beautiful, filterable interface.
 
 ![Sherlock Homes](./frontend/assets/images/sherlock_homes.png)
@@ -313,7 +316,9 @@ The FastAPI backend exposes these endpoints:
 
 ## 📝 License
 
-This project is for educational and personal use only. Respect the terms of service of all scraped websites.
+This project is licensed under the [MIT License](LICENSE).
+
+See the [Legal Disclaimer](legal_disclaimer.md) for important information regarding the use of this software, data ownership, and liability.
 
 ## 🤝 Contributing
 
