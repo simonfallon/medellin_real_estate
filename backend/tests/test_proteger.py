@@ -33,7 +33,7 @@ class TestProteger(unittest.IsolatedAsyncioTestCase):
             # Specific assertions
             self.assertEqual(result["code"], "9666971")
             self.assertEqual(result["bedrooms"], "3")
-            self.assertTrue("3.500.000" in result["price"])
+            self.assertTrue("3.600.000" in result["price"])
 
             # GPS Validation
             self.assertIsNotNone(result.get("latitude"), "Latitude should be extracted")

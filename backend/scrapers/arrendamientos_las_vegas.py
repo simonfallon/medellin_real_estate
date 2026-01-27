@@ -1,9 +1,8 @@
-import asyncio
 import re
 from typing import List, Tuple
-from playwright.async_api import Page, BrowserContext
+from playwright.async_api import Page
 
-from .base import BaseScraper
+from .base import BaseScraper, ScraperConfig
 from .types import Property
 
 # Constants
@@ -14,7 +13,6 @@ SEARCH_URL_TEMPLATE = (
     "minarea=50&neighborhood={neighborhood}"
 )
 
-# Neighborhood Mapping
 # Neighborhood Mapping (Search Parameters)
 BARRIOS = {
     "Abadia": "La+Abadia+",
@@ -44,7 +42,13 @@ UNIFIED_BARRIOS = {
 
 class ArrendamientosLasVegasScraper(BaseScraper):
     def __init__(self):
-        super().__init__(name="Arrendamientos Las Vegas", concurrency=3)
+        config = ScraperConfig(
+            detail_concurrency=3,
+            search_concurrency=5,
+            # This site requires networkidle for dynamic content to load
+            detail_load_state="networkidle",
+        )
+        super().__init__(name="Arrendamientos Las Vegas", config=config)
 
     async def get_search_inputs(self) -> List[Tuple[str, str]]:
         inputs = []
@@ -62,44 +66,12 @@ class ArrendamientosLasVegasScraper(BaseScraper):
                 inputs.append((url, unified_name))
         return inputs
 
-    async def process_search_inputs(
-        self, context: BrowserContext, inputs: List[Tuple[str, str]]
-    ) -> List[Tuple[str, str]]:
-        all_links = []
-        sem = asyncio.Semaphore(5)
-
-        async def process_single_search(url, barrio_name):
-            async with sem:
-                page = await context.new_page()
-                try:
-                    links = await self._extract_links_from_search_page(page, url)
-                    return [(link, barrio_name) for link in links]
-                except Exception as e:
-                    print(f"[{self.name}] Error searching {barrio_name}: {e}")
-                    return []
-                finally:
-                    await page.close()
-
-        tasks = [process_single_search(url, barrio) for url, barrio in inputs]
-        results = await asyncio.gather(*tasks)
-
-        seen = set()
-        for r_list in results:
-            for link, barrio in r_list:
-                if link not in seen:
-                    all_links.append((link, barrio))
-                    seen.add(link)
-
-        return all_links
+    # process_search_inputs() is inherited from BaseScraper
 
     async def _extract_links_from_search_page(
         self, page: Page, search_url: str
     ) -> List[str]:
-        await page.goto(search_url)
-        try:
-            await page.wait_for_load_state("networkidle", timeout=10000)
-        except:
-            pass
+        await self.navigate_and_wait(page, search_url)
 
         links = []
         anchors = await page.locator("a").all()
@@ -107,13 +79,7 @@ class ArrendamientosLasVegasScraper(BaseScraper):
             href = await a.get_attribute("href")
             if href:
                 if "inmuebles/" in href and re.search(r"/\d+$", href):
-                    if not href.startswith("http"):
-                        href = (
-                            BASE_URL + href
-                            if href.startswith("/")
-                            else f"{BASE_URL}/{href}"
-                        )
-
+                    href = self.normalize_url(href, BASE_URL)
                     if href not in links:
                         links.append(href)
         return list(set(links))
@@ -121,11 +87,7 @@ class ArrendamientosLasVegasScraper(BaseScraper):
     async def extract_property_details(
         self, page: Page, link: str, barrio_name: str
     ) -> Property:
-        await page.goto(link)
-        try:
-            await page.wait_for_load_state("networkidle", timeout=10000)
-        except:
-            pass
+        await self.navigate_and_wait(page, link)
 
         # Defaults
         title = "Apartamento en Arriendo"
@@ -257,47 +219,18 @@ class ArrendamientosLasVegasScraper(BaseScraper):
         except:
             pass
 
-        # Images
+        # Images - extract from main carousel container using filter utility
         try:
-            # Get images only from the main carousel container
-            # The container has class "no-scroll" based on debug analysis
-            # We target the .first one as debug showed the first one is the main carousel, second is suggestions
             container = page.locator(".no-scroll").first
             imgs = await container.locator("img").all()
 
+            raw_images = []
             for img in imgs:
                 src = await img.get_attribute("src")
-                if not src or not src.startswith("http"):
-                    continue
+                if src:
+                    raw_images.append(src)
 
-                src_lower = src.lower()
-
-                # Exclusion keywords
-                if any(
-                    x in src_lower
-                    for x in [
-                        "logo",
-                        "icon",
-                        "whatsapp",
-                        "facebook",
-                        "twitter",
-                        "instagram",
-                        "button",
-                        "arrow",
-                    ]
-                ):
-                    continue
-
-                # Check for duplicate
-                if src not in images:
-                    images.append(src)
-
-            # If we found many images, maybe try to filter for specific high-res domains if identified
-            # In the test, we saw "pictures.domus.la".
-            # If we have images from domus.la, we might want to prioritize them or ensure we don't miss them.
-            # Convert to set for uniqueness
-            images = list(dict.fromkeys(images))
-
+            images = self.filter_property_images(raw_images)
         except:
             pass
 
@@ -310,33 +243,8 @@ class ArrendamientosLasVegasScraper(BaseScraper):
             if match:
                 code = match.group(1)
 
-        # GPS Extraction (Mapbox)
-        latitude = None
-        longitude = None
-        try:
-            # The coordinates are often in the "Improve this map" link
-            # format: https://www.mapbox.com/map-feedback/#/-75.57592/6.1766/15
-            mapbox_link = page.locator("a.mapbox-improve-map").first
-            if await mapbox_link.count() > 0:
-                href = await mapbox_link.get_attribute("href")
-                if href and "#" in href:
-                    # href might be like https://apps.mapbox.com/feedback/#/-75.57592/6.1766/15
-                    parts = href.split("#")[-1].split("/")
-                    # parts might be ['', '-75.57592', '6.1766', '15'] or similar
-                    # Filter out empty strings
-                    coords = [p for p in parts if p]
-                    if len(coords) >= 2:
-                        # Usually it is /lng/lat/zoom
-                        lon_val = float(coords[0])
-                        lat_val = float(coords[1])
-
-                        # Sanity check for Medellin/Envigado area
-                        # Lat approx 6.0 to 6.3, Lon approx -75.6 to -75.5
-                        if 6.0 <= lat_val <= 6.4 and -76.0 <= lon_val <= -75.0:
-                            latitude = lat_val
-                            longitude = lon_val
-        except Exception as e:
-            print(f"Error extracting GPS: {e}")
+        # GPS Extraction using base utility
+        latitude, longitude = await self.extract_gps_from_mapbox(page)
 
         return {
             "code": code,

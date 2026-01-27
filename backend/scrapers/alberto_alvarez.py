@@ -1,10 +1,9 @@
-import asyncio
 import re
 import json
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Set
 from playwright.async_api import Page, BrowserContext
 
-from .base import BaseScraper
+from .base import BaseScraper, ScraperConfig
 from .types import Property
 
 # Constants for Alberto Alvarez
@@ -32,7 +31,13 @@ SEARCH_URL_TEMPLATE = "https://albertoalvarez.com/inmuebles/arrendamientos/apart
 
 class AlbertoAlvarezScraper(BaseScraper):
     def __init__(self):
-        super().__init__(name="Alberto Alvarez", concurrency=8)
+        config = ScraperConfig(
+            detail_concurrency=8,
+            search_concurrency=4,
+            # This site needs networkidle for dynamic content
+            detail_load_state="networkidle",
+        )
+        super().__init__(name="Alberto Alvarez", config=config)
 
     async def get_search_inputs(self) -> List[Tuple[str, str]]:
         """
@@ -54,19 +59,15 @@ class AlbertoAlvarezScraper(BaseScraper):
     ) -> List[Tuple[str, str]]:
         """
         Visits each search URL and extracts property links.
+        Custom implementation needed for "Load More" button handling.
         """
-        # We process search URLs sequentially for simplicity or use a small semaphore
-        # The original code did this sequentially with a fresh browser for search logic vs details.
-        # Here we use the shared browser context.
+        import asyncio
 
-        all_links = []
+        all_links: List[Tuple[str, str]] = []
+        seen: Set[str] = set()
 
-        # We can run these in parallel but search pages might be heavy.
-        # Let's use a semaphore.
-        sem = asyncio.Semaphore(4)
-
-        async def process_search(url, barrio_name):
-            async with sem:
+        async def process_search(url: str, barrio_name: str):
+            async with self.search_semaphore:
                 page = await context.new_page()
                 try:
                     links = await self._get_search_results_links(page, url)
@@ -80,8 +81,6 @@ class AlbertoAlvarezScraper(BaseScraper):
         tasks = [process_search(url, barrio) for url, barrio in inputs]
         results = await asyncio.gather(*tasks)
 
-        # Flatten and unique
-        seen = set()
         for r_list in results:
             for link, barrio in r_list:
                 if link not in seen:
@@ -92,22 +91,17 @@ class AlbertoAlvarezScraper(BaseScraper):
 
     async def _get_search_results_links(self, page: Page, url: str) -> List[str]:
         print(f"[{self.name}] Navigating to {url}...")
-        try:
-            await page.goto(url, wait_until="networkidle", timeout=30000)
-        except:
-            print(
-                f"[{self.name}] Timeout loading {url}, attempting partial content scrape"
-            )
+        await self.navigate_and_wait(page, url, load_state="networkidle", timeout=30000)
 
-        # Handle "Load More"
+        # Handle "Load More" button - click up to 3 times
         for _ in range(3):
             await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await asyncio.sleep(1)
             try:
                 load_more = page.locator("button:has-text('Ver más'), .load-more").first
-                if await load_more.is_visible(timeout=1000):
+                if await load_more.is_visible(timeout=2000):
                     await load_more.click()
-                    await asyncio.sleep(1)
+                    # Wait for new content to load after clicking
+                    await page.wait_for_load_state("networkidle", timeout=5000)
             except:
                 break
 
@@ -116,8 +110,7 @@ class AlbertoAlvarezScraper(BaseScraper):
         for el in property_elements:
             href = await el.get_attribute("href")
             if href:
-                if not href.startswith("http"):
-                    href = ALBERTO_ALVAREZ_BASE_URL + href
+                href = self.normalize_url(href, ALBERTO_ALVAREZ_BASE_URL)
                 links.append(href)
 
         return list(set(links))
@@ -125,12 +118,7 @@ class AlbertoAlvarezScraper(BaseScraper):
     async def extract_property_details(
         self, page: Page, link: str, barrio_name: str
     ) -> Optional[Property]:
-        try:
-            await page.goto(link, wait_until="networkidle", timeout=30000)
-        except:
-            print(
-                f"timeout loading detail page {link}, attempting partial content scrape"
-            )
+        await self.navigate_and_wait(page, link, timeout=30000)
 
         # 1. Try to extract from Hidden JSON (Most Reliable)
         try:

@@ -13,7 +13,7 @@ from backend.scrapers import arrendamientos_las_vegas
 
 class TestArrendamientosLasVegas(unittest.IsolatedAsyncioTestCase):
     async def test_single_property(self):
-        url = "https://arrendamientoslasvegas.com/inmuebles/513349"
+        url = "https://arrendamientoslasvegas.com/inmuebles/513710"
         print(f"\nTesting single property scrape: {url}")
 
         async with async_playwright() as p:
@@ -25,20 +25,18 @@ class TestArrendamientosLasVegas(unittest.IsolatedAsyncioTestCase):
             page = await context.new_page()
 
             scraper = arrendamientos_las_vegas.ArrendamientosLasVegasScraper()
-            result = await scraper.extract_property_details(page, url, "La Abadía")
+            result = await scraper.extract_property_details(page, url, "La Abadia")
 
             await browser.close()
 
             print(f"Result: {result}")
-            # We skip validate_property for now or use it if we are sure keys match
-            # validate_property(self, result, expected_source="arrendamientos_las_vegas")
 
-            self.assertEqual(result["code"], "513349")
-            self.assertEqual(result["bedrooms"], "2")
+            self.assertEqual(result["code"], "513710")
+            self.assertEqual(result["bedrooms"], "3")
             self.assertEqual(result["bathrooms"], "2")
             self.assertEqual(result["parking"], "1")
-            self.assertEqual(result["area"], "85")
-            self.assertTrue("3.400.000" in result["price"])
+            self.assertEqual(result["area"], "65")
+            self.assertTrue("3.000.000" in result["price"])
             self.assertEqual(result["source"], "arrendamientos_las_vegas")
 
             # GPS Validation

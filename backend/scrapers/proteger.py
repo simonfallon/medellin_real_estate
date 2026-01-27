@@ -1,9 +1,8 @@
-import asyncio
 import re
 from typing import List, Tuple
-from playwright.async_api import Page, BrowserContext
+from playwright.async_api import Page
 
-from .base import BaseScraper
+from .base import BaseScraper, ScraperConfig
 from .types import Property
 
 # Constants for Inmobiliaria Proteger
@@ -49,7 +48,11 @@ UNIFIED_BARRIOS = {
 
 class ProtegerScraper(BaseScraper):
     def __init__(self):
-        super().__init__(name="Inmobiliaria Proteger", concurrency=3)
+        config = ScraperConfig(
+            detail_concurrency=3,
+            search_concurrency=5,
+        )
+        super().__init__(name="Inmobiliaria Proteger", config=config)
 
     async def get_search_inputs(self) -> List[Tuple[str, str]]:
         inputs = []
@@ -67,41 +70,12 @@ class ProtegerScraper(BaseScraper):
                 inputs.append((url, unified_name))
         return inputs
 
-    async def process_search_inputs(
-        self, context: BrowserContext, inputs: List[Tuple[str, str]]
-    ) -> List[Tuple[str, str]]:
-        all_links = []
-        sem = asyncio.Semaphore(5)
-
-        async def process_single_search(url, barrio_name):
-            async with sem:
-                page = await context.new_page()
-                try:
-                    links = await self._extract_links_from_search_page(page, url)
-                    return [(link, barrio_name) for link in links]
-                except Exception as e:
-                    print(f"[{self.name}] Error searching {barrio_name}: {e}")
-                    return []
-                finally:
-                    await page.close()
-
-        tasks = [process_single_search(url, barrio) for url, barrio in inputs]
-        results = await asyncio.gather(*tasks)
-
-        seen = set()
-        for r_list in results:
-            for link, barrio in r_list:
-                if link not in seen:
-                    all_links.append((link, barrio))
-                    seen.add(link)
-
-        return all_links
+    # process_search_inputs() is inherited from BaseScraper
 
     async def _extract_links_from_search_page(
         self, page: Page, search_url: str
     ) -> List[str]:
-        # print(f"[{self.name}] Navigating to {search_url}")
-        await page.goto(search_url)
+        await self.navigate_and_wait(page, search_url)
 
         links = []
         anchors = await page.locator("a").all()
@@ -127,13 +101,7 @@ class ProtegerScraper(BaseScraper):
                     is_valid = True
 
                 if is_valid:
-                    if not href.startswith("http"):
-                        href = (
-                            PROTEGER_BASE_URL + href
-                            if href.startswith("/")
-                            else f"{PROTEGER_BASE_URL}/{href}"
-                        )
-
+                    href = self.normalize_url(href, PROTEGER_BASE_URL)
                     if href not in links and href != search_url:
                         links.append(href)
 
@@ -142,8 +110,7 @@ class ProtegerScraper(BaseScraper):
     async def extract_property_details(
         self, page: Page, link: str, barrio_name: str
     ) -> Property:
-        await page.goto(link)
-        await page.wait_for_load_state("domcontentloaded")
+        await self.navigate_and_wait(page, link)
 
         # Defaults
         title = ""
@@ -167,44 +134,35 @@ class ProtegerScraper(BaseScraper):
 
         # Details Extraction with Parent Fallback
         async def get_value(label_text):
-            # Try to find element containing label
             try:
-                # XPath to find ANY element containing the text
-                # We want to iterate through them because the word might appear in description
                 elements = await page.locator(
                     f"xpath=//*[contains(text(), '{label_text}')]"
                 ).all()
 
                 for el in elements:
-                    # Helper to validate and clean value
+
                     def clean_val(v):
-                        # Remove label, colons, dots
                         v = (
                             v.replace(label_text, "")
                             .replace(":", "")
                             .replace(".", "")
                             .strip()
                         )
-                        # Limit length to avoid capturing full paragraphs
-                        # 50 chars should be enough for "120 m2", "3", "Parqueadero cubierto"
                         if len(v) > 50:
                             return ""
                         return v
 
-                    # 1. Check if the element text itself has the value (e.g. "Alcoba: 3")
                     txt = await el.inner_text()
                     val = clean_val(txt)
                     if val:
                         return val
 
-                    # 2. Check Parent Text (often "Label: Value" is in parent)
                     parent = el.locator("xpath=..")
                     p_txt = await parent.inner_text()
                     val = clean_val(p_txt)
                     if val:
                         return val
 
-                    # 3. Check Next Sibling
                     sibling = el.locator("xpath=following-sibling::*[1]")
                     if await sibling.count() > 0:
                         s_txt = await sibling.inner_text()
@@ -216,14 +174,12 @@ class ProtegerScraper(BaseScraper):
 
         # Price extraction
         try:
-            # Try multiple selectors
             price_el = page.locator(
                 ".price, .precio, .property-price, .precio-inmueble"
             ).first
             if await price_el.count() > 0:
                 price = await price_el.inner_text()
             else:
-                # Look for h2/h3/h4 with price format
                 headers = await page.locator("h1, h2, h3, h4, strong, span").all()
                 for h in headers:
                     txt = await h.inner_text()
@@ -236,7 +192,6 @@ class ProtegerScraper(BaseScraper):
             pass
 
         if not price:
-            # Try from title again
             try:
                 t_str = await page.title()
                 if "-" in t_str:
@@ -261,36 +216,27 @@ class ProtegerScraper(BaseScraper):
 
         # Description
         try:
-            # Look for a paragraph with description
             desc_el = page.locator("#description, .description").first
             if await desc_el.count() > 0:
                 description = await desc_el.inner_text()
         except:
             pass
 
-        # Images
+        # Images - using filter utility
         try:
-            # The gallery uses Swiper. Images are in .swiper-slide elements.
-            # We want all images, not just the visible one.
-            # They are usually direct img children or nested.
-
-            # Wait for swiper to load
             try:
                 await page.wait_for_selector(".swiper-slide", timeout=5000)
             except:
                 pass
 
+            raw_images = []
             imgs = await page.locator(".swiper-slide img").all()
             for img in imgs:
                 src = await img.get_attribute("src")
+                if src:
+                    raw_images.append(src)
 
-                # Validating src
-                # If it's in the main gallery (swiper-slide), it's likely a property image.
-                # We just want to filter out obvious garbage if any.
-                if src and "logo" not in src:
-                    # Some src might be relative or just need cleanup
-                    if src not in images:
-                        images.append(src)
+            images = self.filter_property_images(raw_images)
         except:
             pass
 
@@ -299,14 +245,12 @@ class ProtegerScraper(BaseScraper):
 
         # Refine Code
         if not code:
-            # Try from URL
             match = re.search(r"/(\d+)$", link)
             if match:
                 code = match.group(1)
 
         # Refine Price
         if not price:
-            # Try from title
             try:
                 t_str = await page.title()
                 if "-" in t_str:
@@ -319,7 +263,6 @@ class ProtegerScraper(BaseScraper):
                 pass
 
         if not price:
-            # Try searching specifically for price pattern in H2 or H1
             try:
                 price = await page.evaluate(
                     """() => {
@@ -333,25 +276,10 @@ class ProtegerScraper(BaseScraper):
             except:
                 pass
 
-        # Extract GPS
-        latitude, longitude = None, None
-        try:
-            coords = await page.evaluate(
-                """() => {
-                return {
-                    lat: window.latitude,
-                    lon: window.longitude
-                }
-            }"""
-            )
-            if coords["lat"] and coords["lon"]:
-                latitude = float(coords["lat"])
-                longitude = float(coords["lon"])
-        except Exception:
-            # print(f"Error extracting GPS: {e}")
-            pass
+        # Extract GPS using base utility
+        latitude, longitude = await self.extract_gps_from_window_var(page)
 
-        data = {
+        return {
             "code": code,
             "title": title or "Apartamento en Arriendo",
             "location": barrio_name,
@@ -369,5 +297,3 @@ class ProtegerScraper(BaseScraper):
             "latitude": latitude,
             "longitude": longitude,
         }
-
-        return data

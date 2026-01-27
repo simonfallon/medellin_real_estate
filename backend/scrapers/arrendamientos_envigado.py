@@ -1,9 +1,8 @@
-import asyncio
 import re
 from typing import List, Tuple
-from playwright.async_api import Page, BrowserContext
+from playwright.async_api import Page
 
-from .base import BaseScraper
+from .base import BaseScraper, ScraperConfig
 from .types import Property
 
 # Constants for Arrendamientos Envigado
@@ -29,7 +28,11 @@ BARRIOS = {
 
 class ArrendamientosEnvigadoScraper(BaseScraper):
     def __init__(self):
-        super().__init__(name="Arrendamientos Envigado", concurrency=3)
+        config = ScraperConfig(
+            detail_concurrency=3,
+            search_concurrency=5,
+        )
+        super().__init__(name="Arrendamientos Envigado", config=config)
 
     async def get_search_inputs(self) -> List[Tuple[str, str]]:
         """
@@ -46,67 +49,25 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
                 urls_to_scrape.append((url, barrio_name))
         return urls_to_scrape
 
-    async def process_search_inputs(
-        self, context: BrowserContext, inputs: List[Tuple[str, str]]
-    ) -> List[Tuple[str, str]]:
-        """
-        Visits each search URL and extracts property links.
-        """
-        # We can parallelize the search page processing too if we want,
-        # but for now let's keep it simple or use a smaller semaphore if needed.
-        # The base class doesn't enforce how we process these, but returns a flat list.
-
-        # We'll use a local semaphore for search pages
-        sem = asyncio.Semaphore(5)
-
-        async def process_single_search(url, barrio_name):
-            async with sem:
-                page = await context.new_page()
-                try:
-                    links = await self._extract_links_from_search_page(page, url)
-                    return [(link, barrio_name) for link in links]
-                except Exception as e:
-                    print(f"[{self.name}] Error processing search {url}: {e}")
-                    return []
-                finally:
-                    await page.close()
-
-        tasks = [process_single_search(url, barrio) for url, barrio in inputs]
-        results_lists = await asyncio.gather(*tasks)
-
-        # Flatten results
-        all_links = []
-        seen_links = set()
-        for r_list in results_lists:
-            for link, barrio in r_list:
-                if link not in seen_links:
-                    seen_links.add(link)
-                    all_links.append((link, barrio))
-
-        return all_links
+    # process_search_inputs() is inherited from BaseScraper
 
     async def _extract_links_from_search_page(
         self, page: Page, search_url: str
     ) -> List[str]:
-        await page.goto(search_url)
-        try:
-            await page.wait_for_load_state("networkidle", timeout=10000)
-        except:
-            pass
-
-        try:
-            await page.wait_for_selector("a.link-footer-black", timeout=10000)
-        except:
-            print(f"[{self.name}] No results or timeout for {search_url}")
-            return []
+        """Extract property links from search results page."""
+        await self.navigate_and_wait(
+            page,
+            search_url,
+            load_state="domcontentloaded",
+            wait_for_selector="a.link-footer-black",
+        )
 
         links = []
         cards = await page.locator("a.link-footer-black").all()
         for card in cards:
             href = await card.get_attribute("href")
             if href and "inmueble.html" in href:
-                if not href.startswith("http"):
-                    href = ARRENDAMIENTOS_ENVIGADO_BASE_URL + href.lstrip("/")
+                href = self.normalize_url(href, ARRENDAMIENTOS_ENVIGADO_BASE_URL)
                 links.append(href)
 
         return list(set(links))
@@ -114,13 +75,11 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
     async def extract_property_details(
         self, page: Page, link: str, barrio_name: str
     ) -> Property:
-        await page.goto(link)
-        await page.wait_for_load_state("domcontentloaded")
+        await self.navigate_and_wait(page, link, wait_for_selector="div.lux-grey.bold")
 
-        # Scrape details
+        # Scrape title
         title = ""
         try:
-            await page.wait_for_selector("div.lux-grey.bold", timeout=5000)
             title_el = page.locator("div.lux-grey.bold > span.bold").first
             if await title_el.count() > 0:
                 title = await title_el.inner_text()
@@ -178,7 +137,7 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
         if not parking:
             parking = await get_value_by_icon("car")
 
-        # Regex fallback
+        # Regex fallback from description
         if not bedrooms:
             match = re.search(
                 r"(\d+)\s*(?:alcobas|habitaciones)", description, re.IGNORECASE
@@ -198,14 +157,17 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
             elif "parqueadero" in description.lower():
                 parking = "1"
 
-        images = []
+        # Extract images using filter utility
+        raw_images = []
         carousel_imgs = await page.locator(".carousel-item img").all()
         for img in carousel_imgs:
             src = await img.get_attribute("src")
             if src:
-                if "logo-ae-new.png" in src or "assets/" in src:
-                    continue
-                images.append(src)
+                raw_images.append(src)
+
+        images = self.filter_property_images(
+            raw_images, additional_exclusions={"logo-ae-new.png", "assets/"}
+        )
 
         # Extract code from URL
         code = ""
@@ -216,7 +178,6 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
         except:
             pass
 
-        # Default image if none found
         image_url = images[0] if images else ""
 
         return {
@@ -234,4 +195,6 @@ class ArrendamientosEnvigadoScraper(BaseScraper):
             "image_url": image_url,
             "link": link,
             "source": "arrendamientos_envigado",
+            "latitude": None,
+            "longitude": None,
         }
