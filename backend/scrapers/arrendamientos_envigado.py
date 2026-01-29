@@ -27,12 +27,17 @@ BARRIOS = {
 
 
 class ArrendamientosEnvigadoScraper(BaseScraper):
-    def __init__(self):
-        config = ScraperConfig(
+    def __init__(self, config: ScraperConfig = None):
+        default_config = ScraperConfig(
             detail_concurrency=3,
             search_concurrency=5,
         )
-        super().__init__(name="Arrendamientos Envigado", config=config)
+
+        # Override price_ranges if custom config provided
+        if config is not None:
+            default_config.price_ranges = config.price_ranges
+
+        super().__init__(name="Arrendamientos Envigado", config=default_config)
 
     async def get_search_inputs(self) -> List[Tuple[str, str]]:
         """

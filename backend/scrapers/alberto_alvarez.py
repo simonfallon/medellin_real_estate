@@ -30,14 +30,18 @@ SEARCH_URL_TEMPLATE = "https://albertoalvarez.com/inmuebles/arrendamientos/apart
 
 
 class AlbertoAlvarezScraper(BaseScraper):
-    def __init__(self):
-        config = ScraperConfig(
+    def __init__(self, config: ScraperConfig = None):
+        default_config = ScraperConfig(
             detail_concurrency=8,
             search_concurrency=4,
-            # This site needs networkidle for dynamic content
             detail_load_state="networkidle",
         )
-        super().__init__(name="Alberto Alvarez", config=config)
+
+        # Override price_ranges if custom config provided
+        if config is not None:
+            default_config.price_ranges = config.price_ranges
+
+        super().__init__(name="Alberto Alvarez", config=default_config)
 
     async def get_search_inputs(self) -> List[Tuple[str, str]]:
         """

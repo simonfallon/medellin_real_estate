@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Debug - Price Range Testing</title>
+    <style>
+      body {
+        font-family: monospace;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background: #1a1a1a;
+        color: #00ff00;
+      }
+      .section {
+        background: #2a2a2a;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        border: 1px solid #00ff00;
+      }
+      input {
+        padding: 10px;
+        margin: 10px 0;
+        width: 200px;
+        background: #1a1a1a;
+        color: #00ff00;
+        border: 1px solid #00ff00;
+      }
+      button {
+        padding: 10px 20px;
+        background: #00ff00;
+        color: #1a1a1a;
+        border: none;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #00cc00;
+      }
+      .output {
+        background: #000;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        border: 1px solid #00ff00;
+      }
+      label {
+        display: block;
+        margin: 10px 0 5px 0;
+        color: #00ff00;
+      }
+      h1,
+      h2 {
+        color: #00ff00;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔍 Price Range Debugging Tool</h1>
+
+    <div class="section">
+      <h2>Step 1: Input Values</h2>
+      <label>
+        <input type="checkbox" id="forceUpdate" checked />
+        Force Update
+      </label>
+      <label>
+        Precio Mínimo:
+        <input type="number" id="filterPriceMin" value="0" />
+      </label>
+      <label>
+        Precio Máximo:
+        <input type="number" id="filterPriceMax" value="4000000" />
+      </label>
+    </div>
+
+    <div class="section">
+      <h2>Step 2: Read & Parse Values</h2>
+      <button id="testReadBtn">Test Reading Values</button>
+      <div class="output" id="readOutput">
+        Click "Test Reading Values" to see what values are read from the inputs
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Step 3: Construct API URL</h2>
+      <button id="testUrlBtn">Test URL Construction</button>
+      <div class="output" id="urlOutput">
+        Click "Test URL Construction" to see the generated API endpoint
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Step 4: Make API Call (Dry Run)</h2>
+      <button id="testApiBtn">Test API Call (No Backend Needed)</button>
+      <div class="output" id="apiOutput">
+        Click "Test API Call" to simulate the API call
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Preset Test Cases</h2>
+      <button id="preset1">Preset: 2M - 4M</button>
+      <button id="preset2">Preset: 0 - 5M</button>
+      <button id="preset3">Preset: 3M - 3.5M</button>
+      <button id="preset4">Preset: Empty Values</button>
+    </div>
+
+    <script type="module">
+      // Test 1: Reading values
+      document.getElementById("testReadBtn").addEventListener("click", () => {
+        const forceUpdate = document.getElementById("forceUpdate").checked;
+        const filterPriceMinInput = document
+          .getElementById("filterPriceMin")
+          .value.trim();
+        const filterPriceMaxInput = document
+          .getElementById("filterPriceMax")
+          .value.trim();
+
+        let scrapePriceMin = null;
+        let scrapePriceMax = null;
+
+        if (forceUpdate) {
+          scrapePriceMin = filterPriceMinInput
+            ? parseInt(filterPriceMinInput, 10)
+            : null;
+          scrapePriceMax = filterPriceMaxInput
+            ? parseInt(filterPriceMaxInput, 10)
+            : null;
+        }
+
+        const output = `
+Force Update Checked: ${forceUpdate}
+
+Raw Input Values:
+  filterPriceMin.value = "${document.getElementById("filterPriceMin").value}"
+  filterPriceMax.value = "${document.getElementById("filterPriceMax").value}"
+
+After .trim():
+  filterPriceMinInput = "${filterPriceMinInput}"
+  filterPriceMaxInput = "${filterPriceMaxInput}"
+
+After parseInt():
+  scrapePriceMin = ${scrapePriceMin} (type: ${typeof scrapePriceMin})
+  scrapePriceMax = ${scrapePriceMax} (type: ${typeof scrapePriceMax})
+
+Truthy checks:
+  filterPriceMinInput ? true : false = ${filterPriceMinInput ? true : false}
+  filterPriceMaxInput ? true : false = ${filterPriceMaxInput ? true : false}
+        `;
+        document.getElementById("readOutput").textContent = output;
+      });
+
+      // Test 2: URL construction
+      document.getElementById("testUrlBtn").addEventListener("click", () => {
+        const forceUpdate = document.getElementById("forceUpdate").checked;
+        const filterPriceMinInput = document
+          .getElementById("filterPriceMin")
+          .value.trim();
+        const filterPriceMaxInput = document
+          .getElementById("filterPriceMax")
+          .value.trim();
+
+        let scrapePriceMin = null;
+        let scrapePriceMax = null;
+
+        if (forceUpdate) {
+          scrapePriceMin = filterPriceMinInput
+            ? parseInt(filterPriceMinInput, 10)
+            : null;
+          scrapePriceMax = filterPriceMaxInput
+            ? parseInt(filterPriceMaxInput, 10)
+            : null;
+        }
+
+        // Replicate scrapeSource logic
+        const source = "alberto_alvarez";
+        let endpoint = `/api/scrape/batch?source=${source}&force=${forceUpdate}`;
+
+        if (scrapePriceMin !== null && scrapePriceMax !== null) {
+          endpoint += `&price_min=${scrapePriceMin}&price_max=${scrapePriceMax}`;
+        }
+
+        const output = `
+Parsed Values:
+  scrapePriceMin = ${scrapePriceMin}
+  scrapePriceMax = ${scrapePriceMax}
+
+Condition Check:
+  scrapePriceMin !== null = ${scrapePriceMin !== null}
+  scrapePriceMax !== null = ${scrapePriceMax !== null}
+  Both not null = ${scrapePriceMin !== null && scrapePriceMax !== null}
+
+Generated Endpoint:
+  ${endpoint}
+
+Full URL would be:
+  ${window.location.origin}${endpoint}
+        `;
+        document.getElementById("urlOutput").textContent = output;
+      });
+
+      // Test 3: Simulated API call
+      document.getElementById("testApiBtn").addEventListener("click", () => {
+        const forceUpdate = document.getElementById("forceUpdate").checked;
+        const filterPriceMinInput = document
+          .getElementById("filterPriceMin")
+          .value.trim();
+        const filterPriceMaxInput = document
+          .getElementById("filterPriceMax")
+          .value.trim();
+
+        let scrapePriceMin = null;
+        let scrapePriceMax = null;
+
+        if (forceUpdate) {
+          scrapePriceMin = filterPriceMinInput
+            ? parseInt(filterPriceMinInput, 10)
+            : null;
+          scrapePriceMax = filterPriceMaxInput
+            ? parseInt(filterPriceMaxInput, 10)
+            : null;
+        }
+
+        const source = "all";
+        let endpoint = `/api/scrape/batch?source=${source}&force=${forceUpdate}`;
+
+        if (scrapePriceMin !== null && scrapePriceMax !== null) {
+          endpoint += `&price_min=${scrapePriceMin}&price_max=${scrapePriceMax}`;
+        }
+
+        const output = `
+Simulated API Call:
+====================
+
+POST ${endpoint}
+Headers: {
+  "Content-Type": "application/json"
+}
+
+Backend would receive:
+  source = "${source}"
+  force = ${forceUpdate}
+  price_min = ${scrapePriceMin}
+  price_max = ${scrapePriceMax}
+
+✅ This matches what the backend should receive!
+        `;
+        document.getElementById("apiOutput").textContent = output;
+      });
+
+      // Preset buttons
+      document.getElementById("preset1").addEventListener("click", () => {
+        document.getElementById("filterPriceMin").value = "2000000";
+        document.getElementById("filterPriceMax").value = "4000000";
+        document.getElementById("forceUpdate").checked = true;
+      });
+
+      document.getElementById("preset2").addEventListener("click", () => {
+        document.getElementById("filterPriceMin").value = "0";
+        document.getElementById("filterPriceMax").value = "5000000";
+        document.getElementById("forceUpdate").checked = true;
+      });
+
+      document.getElementById("preset3").addEventListener("click", () => {
+        document.getElementById("filterPriceMin").value = "3000000";
+        document.getElementById("filterPriceMax").value = "3500000";
+        document.getElementById("forceUpdate").checked = true;
+      });
+
+      document.getElementById("preset4").addEventListener("click", () => {
+        document.getElementById("filterPriceMin").value = "";
+        document.getElementById("filterPriceMax").value = "";
+        document.getElementById("forceUpdate").checked = false;
+      });
+    </script>
+  </body>
+</html>

@@ -1,7 +1,7 @@
 import asyncio
 import re
 from dataclasses import dataclass, field
-from typing import List, Optional, Any, Set, Tuple
+from typing import List, Optional, Any, Set, Tuple, Dict
 from playwright.async_api import async_playwright, Page, BrowserContext
 from abc import ABC, abstractmethod
 from .types import Property
@@ -40,16 +40,21 @@ class ScraperConfig:
     # Maximum images to collect per property
     max_images: int = 15
 
+    # Price ranges for scraping
+    price_ranges: List[Dict[str, int]] = field(
+        default_factory=lambda: [{"min": 0, "max": 4000000}]
+    )
+
 
 class BaseScraper(ABC):
-    PRICE_RANGES = [{"min": 2500000, "max": 3500000}]
-
     # Default configuration - subclasses can override
     DEFAULT_CONFIG = ScraperConfig()
 
     def __init__(self, name: str, config: ScraperConfig = None):
         self.name = name
         self.config = config or ScraperConfig()
+        # Set PRICE_RANGES from config for backward compatibility
+        self.PRICE_RANGES = self.config.price_ranges
         self.semaphore = asyncio.Semaphore(self.config.detail_concurrency)
         self.search_semaphore = asyncio.Semaphore(self.config.search_concurrency)
         self.browser = None

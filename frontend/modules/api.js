@@ -14,8 +14,28 @@ export async function fetchLocations() {
   return await response.json();
 }
 
-export async function scrapeSource(source, force = false) {
-  const endpoint = `/api/scrape/batch?source=${source}&force=${force}`;
+export async function scrapeSource(
+  source,
+  force = false,
+  priceMin = null,
+  priceMax = null,
+) {
+  let endpoint = `/api/scrape/batch?source=${source}&force=${force}`;
+
+  // Add price parameters if provided
+  if (priceMin !== null && priceMax !== null) {
+    endpoint += `&price_min=${priceMin}&price_max=${priceMax}`;
+  }
+
+  // Debug logging
+  console.log("API: scrapeSource called with:", {
+    source,
+    force,
+    priceMin,
+    priceMax,
+  });
+  console.log("API: Full endpoint URL:", endpoint);
+
   const res = await fetch(endpoint, {
     method: "POST",
     headers: {

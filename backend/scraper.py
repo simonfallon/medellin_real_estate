@@ -4,49 +4,50 @@ from .scrapers.proteger import ProtegerScraper
 from .scrapers.arrendamientos_las_vegas import ArrendamientosLasVegasScraper
 from .scrapers.escala_inmobiliaria import EscalaInmobiliariaScraper
 from .scrapers.uribienes import UribienesScraper
+from .scrapers.base import ScraperConfig
 from . import storage
 import asyncio
 
 
 # Scrapers for specific sites
-async def scrape_arrendamientos_envigado_batch():
-    scraper = ArrendamientosEnvigadoScraper()
+async def scrape_arrendamientos_envigado_batch(config: ScraperConfig = None):
+    scraper = ArrendamientosEnvigadoScraper(config=config)
     return await scraper.scrape()
 
 
-async def scrape_alberto_alvarez_batch():
-    scraper = AlbertoAlvarezScraper()
+async def scrape_alberto_alvarez_batch(config: ScraperConfig = None):
+    scraper = AlbertoAlvarezScraper(config=config)
     return await scraper.scrape()
 
 
-async def scrape_proteger_batch():
-    scraper = ProtegerScraper()
+async def scrape_proteger_batch(config: ScraperConfig = None):
+    scraper = ProtegerScraper(config=config)
     return await scraper.scrape()
 
 
-async def scrape_arrendamientos_las_vegas_batch():
-    scraper = ArrendamientosLasVegasScraper()
+async def scrape_arrendamientos_las_vegas_batch(config: ScraperConfig = None):
+    scraper = ArrendamientosLasVegasScraper(config=config)
     return await scraper.scrape()
 
 
-async def scrape_escala_inmobiliaria_batch():
-    scraper = EscalaInmobiliariaScraper()
+async def scrape_escala_inmobiliaria_batch(config: ScraperConfig = None):
+    scraper = EscalaInmobiliariaScraper(config=config)
     return await scraper.scrape()
 
 
-async def scrape_uribienes_batch():
-    scraper = UribienesScraper()
+async def scrape_uribienes_batch(config: ScraperConfig = None):
+    scraper = UribienesScraper(config=config)
     return await scraper.scrape()
 
 
-async def scrape_all_batch():
+async def scrape_all_batch(config: ScraperConfig = None):
     # Run all scrapers concurrently
-    envigado_scraper = ArrendamientosEnvigadoScraper()
-    alberto_scraper = AlbertoAlvarezScraper()
-    proteger_scraper = ProtegerScraper()
-    las_vegas_scraper = ArrendamientosLasVegasScraper()
-    escala_scraper = EscalaInmobiliariaScraper()
-    uribienes_scraper = UribienesScraper()
+    envigado_scraper = ArrendamientosEnvigadoScraper(config=config)
+    alberto_scraper = AlbertoAlvarezScraper(config=config)
+    proteger_scraper = ProtegerScraper(config=config)
+    las_vegas_scraper = ArrendamientosLasVegasScraper(config=config)
+    escala_scraper = EscalaInmobiliariaScraper(config=config)
+    uribienes_scraper = UribienesScraper(config=config)
 
     (
         envigado_results,

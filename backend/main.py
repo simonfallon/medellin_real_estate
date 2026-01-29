@@ -1,7 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from typing import Optional
 from . import database, scraper, storage
+from .scrapers.base import ScraperConfig
 from datetime import datetime, timedelta
 
 app = FastAPI()
@@ -88,7 +90,11 @@ def read_property_locations(db: Session = Depends(database.get_db)):
 
 @app.post("/api/scrape/batch")
 async def trigger_batch_scrape(
-    source: str = "all", force: bool = False, db: Session = Depends(database.get_db)
+    source: str = "all",
+    force: bool = False,
+    price_min: Optional[int] = None,
+    price_max: Optional[int] = None,
+    db: Session = Depends(database.get_db),
 ):
     global last_scrape_time
     try:
@@ -105,24 +111,48 @@ async def trigger_batch_scrape(
                 "cached": True,
             }
 
+        # Build custom config if prices provided
+        custom_config = None
+        if price_min is not None and price_max is not None:
+            # Validation
+            if price_min < 0 or price_max < 0:
+                raise HTTPException(status_code=400, detail="Prices must be positive")
+            if price_min >= price_max:
+                raise HTTPException(
+                    status_code=400, detail="Min price must be less than max price"
+                )
+            if price_max > 50000000:  # 50M COP sanity check
+                raise HTTPException(
+                    status_code=400, detail="Max price exceeds reasonable limit"
+                )
+
+            custom_config = ScraperConfig(
+                price_ranges=[{"min": price_min, "max": price_max}]
+            )
+
+        # Pass config to scraper functions
         if source == "alberto_alvarez":
-            data = await scraper.scrape_alberto_alvarez_batch()
+            data = await scraper.scrape_alberto_alvarez_batch(custom_config)
         elif source == "arrendamientos_envigado":
-            data = await scraper.scrape_arrendamientos_envigado_batch()
+            data = await scraper.scrape_arrendamientos_envigado_batch(custom_config)
         elif source == "proteger":
-            data = await scraper.scrape_proteger_batch()
+            data = await scraper.scrape_proteger_batch(custom_config)
         elif source == "arrendamientos_las_vegas":
-            data = await scraper.scrape_arrendamientos_las_vegas_batch()
+            data = await scraper.scrape_arrendamientos_las_vegas_batch(custom_config)
         elif source == "escala_inmobiliaria":
-            data = await scraper.scrape_escala_inmobiliaria_batch()
+            data = await scraper.scrape_escala_inmobiliaria_batch(custom_config)
         elif source == "uribienes":
-            data = await scraper.scrape_uribienes_batch()
+            data = await scraper.scrape_uribienes_batch(custom_config)
         else:
-            data = await scraper.scrape_all_batch()
+            data = await scraper.scrape_all_batch(custom_config)
 
         last_scrape_time = datetime.now()
         return storage.save_properties(db, data)
+    except HTTPException:
+        # Re-raise HTTPException as-is (validation errors, etc.)
+        raise
     except Exception as e:
+        # Catch all other exceptions and return 500
         raise HTTPException(status_code=500, detail=str(e))
 
 

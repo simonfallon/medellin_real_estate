@@ -41,14 +41,18 @@ UNIFIED_BARRIOS = {
 
 
 class ArrendamientosLasVegasScraper(BaseScraper):
-    def __init__(self):
-        config = ScraperConfig(
+    def __init__(self, config: ScraperConfig = None):
+        default_config = ScraperConfig(
             detail_concurrency=3,
             search_concurrency=5,
-            # This site requires networkidle for dynamic content to load
             detail_load_state="networkidle",
         )
-        super().__init__(name="Arrendamientos Las Vegas", config=config)
+
+        # Override price_ranges if custom config provided
+        if config is not None:
+            default_config.price_ranges = config.price_ranges
+
+        super().__init__(name="Arrendamientos Las Vegas", config=default_config)
 
     async def get_search_inputs(self) -> List[Tuple[str, str]]:
         inputs = []

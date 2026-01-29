@@ -27,14 +27,19 @@ BARRIOS_LIST = [
 
 
 class EscalaInmobiliariaScraper(BaseScraper):
-    def __init__(self):
-        config = ScraperConfig(
+    def __init__(self, config: ScraperConfig = None):
+        default_config = ScraperConfig(
             detail_concurrency=3,
             search_concurrency=5,
             image_exclusions=ScraperConfig().image_exclusions
             | {"openstreetmap", "psenuevo", "simicrm"},
         )
-        super().__init__(name="Escala Inmobiliaria", config=config)
+
+        # Override price_ranges if custom config provided
+        if config is not None:
+            default_config.price_ranges = config.price_ranges
+
+        super().__init__(name="Escala Inmobiliaria", config=default_config)
 
     async def get_search_inputs(self) -> List[Tuple[str, str]]:
         """

@@ -158,6 +158,50 @@ async function handleScrape() {
   const websiteSelect = document.getElementById("websiteSelect");
   const selectedWebsite = websiteSelect.value;
   const forceUpdate = document.getElementById("forceUpdate").checked;
+
+  // When force update is checked, use filter inputs for scraping
+  let scrapePriceMin = null;
+  let scrapePriceMax = null;
+
+  if (forceUpdate) {
+    const filterPriceMinInput = document
+      .getElementById("filterPriceMin")
+      .value.trim();
+    const filterPriceMaxInput = document
+      .getElementById("filterPriceMax")
+      .value.trim();
+
+    // Convert to integers, treating empty strings as null
+    scrapePriceMin = filterPriceMinInput
+      ? parseInt(filterPriceMinInput, 10)
+      : null;
+    scrapePriceMax = filterPriceMaxInput
+      ? parseInt(filterPriceMaxInput, 10)
+      : null;
+
+    // Validation only when force update is checked and prices are provided
+    if (scrapePriceMin !== null && scrapePriceMax !== null) {
+      if (scrapePriceMin < 0 || scrapePriceMax < 0) {
+        showNotification("Los precios deben ser positivos");
+        return;
+      }
+      if (scrapePriceMin >= scrapePriceMax) {
+        showNotification("El precio mínimo debe ser menor que el máximo");
+        return;
+      }
+      if (scrapePriceMax > 50000000) {
+        showNotification("El precio máximo excede el límite razonable (50M)");
+        return;
+      }
+    }
+
+    // Debug: Log what we're sending
+    console.log("Force update - sending prices:", {
+      scrapePriceMin,
+      scrapePriceMax,
+    });
+  }
+
   const grid = document.getElementById("propertiesGrid");
 
   btn.disabled = true;
@@ -174,7 +218,12 @@ async function handleScrape() {
   }
 
   try {
-    const data = await scrapeSource(selectedWebsite, forceUpdate);
+    const data = await scrapeSource(
+      selectedWebsite,
+      forceUpdate,
+      scrapePriceMin,
+      scrapePriceMax,
+    );
 
     if (data.cached) {
       const time = data.message.split("Last updated: ")[1] || "Reciente";
