@@ -88,6 +88,7 @@ export const SOURCE_NAME_MAP = {
   arrendamientos_las_vegas: "Arrendamientos Las Vegas",
   escala_inmobiliaria: "Escala Inmobiliaria",
   uribienes: "Uribienes",
+  livinmobiliaria: "Livinmobiliaria",
 };
 
 export function getSourceName(slug) {

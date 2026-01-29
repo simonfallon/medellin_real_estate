@@ -4,6 +4,7 @@ from .scrapers.proteger import ProtegerScraper
 from .scrapers.arrendamientos_las_vegas import ArrendamientosLasVegasScraper
 from .scrapers.escala_inmobiliaria import EscalaInmobiliariaScraper
 from .scrapers.uribienes import UribienesScraper
+from .scrapers.livinmobiliaria import LivinmobiliariaScraper
 from .scrapers.base import ScraperConfig
 from . import storage
 import asyncio
@@ -40,6 +41,11 @@ async def scrape_uribienes_batch(config: ScraperConfig = None):
     return await scraper.scrape()
 
 
+async def scrape_livinmobiliaria_batch(config: ScraperConfig = None):
+    scraper = LivinmobiliariaScraper(config=config)
+    return await scraper.scrape()
+
+
 async def scrape_all_batch(config: ScraperConfig = None):
     # Run all scrapers concurrently
     envigado_scraper = ArrendamientosEnvigadoScraper(config=config)
@@ -48,6 +54,7 @@ async def scrape_all_batch(config: ScraperConfig = None):
     las_vegas_scraper = ArrendamientosLasVegasScraper(config=config)
     escala_scraper = EscalaInmobiliariaScraper(config=config)
     uribienes_scraper = UribienesScraper(config=config)
+    livinmobiliaria_scraper = LivinmobiliariaScraper(config=config)
 
     (
         envigado_results,
@@ -56,6 +63,7 @@ async def scrape_all_batch(config: ScraperConfig = None):
         las_vegas_results,
         escala_results,
         uribienes_results,
+        livinmobiliaria_results,
     ) = await asyncio.gather(
         envigado_scraper.scrape(),
         alberto_scraper.scrape(),
@@ -63,6 +71,7 @@ async def scrape_all_batch(config: ScraperConfig = None):
         las_vegas_scraper.scrape(),
         escala_scraper.scrape(),
         uribienes_scraper.scrape(),
+        livinmobiliaria_scraper.scrape(),
     )
     return (
         envigado_results
@@ -71,6 +80,7 @@ async def scrape_all_batch(config: ScraperConfig = None):
         + las_vegas_results
         + escala_results
         + uribienes_results
+        + livinmobiliaria_results
     )
 
 

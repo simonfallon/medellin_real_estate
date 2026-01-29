@@ -12,27 +12,29 @@ Before starting, gather the following information. Fill in these details when re
 
 **2. Neighborhood Mapping (BARRIOS):**
 How does the website encode neighborhoods in its search URL?
-`[https://uribienes.com/inmuebles/arriendo?city=5266&type=1&pcmin=2500000&pcmax=3500000&neighborhood=Jardines+]`
-Just plan barrio name separated with + and ending with +
+This does not work properly for this website. We have to go to 
+`https://www.livinmobiliaria.com/resultados?gestion=Arriendo&tipo=Apartamentos&s=municipio-en-envigado&rango-precio=2000000-2600000&rango-area=50-100`
+and scrape only the properties that have the desired BARRIOs in the name of the card, for instance:
+`Apartamento en Arriendo - La Magnolia`
 
 **3. Sample Property for Testing:**
 A URL to a specific, active property listing to use for the single-property test.
-`[https://uribienes.com/inmuebles/215327]`
+`[https://www.livinmobiliaria.com/detalle-propiedad/apartamento-enarriendo-en-la-magnolia-20167]`
 
 **4. Search Results URL Pattern:**
 The pattern used to filter by price, neighborhood, etc.
-`[https://uribienes.com/inmuebles/arriendo?city=5266&type=1&pcmin=2500000&pcmax=3500000&neighborhood=Jardines+&minarea=50&maxarea=100]`
+`[https://www.livinmobiliaria.com/resultados?gestion=Arriendo&tipo=Apartamentos&s=municipio-en-envigado&rango-precio=2000000-2600000&rango-area=50-100]`
 
 **5. Explicit Data for Verification:**
-3 Habitaciones
+Precio total (COP) $ 2.300.000
+87m²
+3 Alcobas
 2 Baños
-1 Parqueadero
-90 m²
-Precio total: $ 3.500.00
+1 Parqueaderos
 
-Sample image address: https://s3-us-west-2.amazonaws.com/pictures.domus.la/inmobiliaria_871/wm/215327_1_1766532444.jpg
+Sample image address: https://produccion-bien-raiz.s3.amazonaws.com/a0j-inmueble__c/a0jHq00000ayVLMIA2/COCINA20.jpeg
 
-HAS GPS LOCATION
+HAS GPS LOCATION: YES
 
 ---
 

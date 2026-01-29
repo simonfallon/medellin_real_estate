@@ -143,6 +143,8 @@ async def trigger_batch_scrape(
             data = await scraper.scrape_escala_inmobiliaria_batch(custom_config)
         elif source == "uribienes":
             data = await scraper.scrape_uribienes_batch(custom_config)
+        elif source == "livinmobiliaria":
+            data = await scraper.scrape_livinmobiliaria_batch(custom_config)
         else:
             data = await scraper.scrape_all_batch(custom_config)
 
