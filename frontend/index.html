@@ -1,305 +1,242 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sherlock Homes</title>
-    <link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg" />
-    <meta
-      name="description"
-      content="Discover the finest properties in Medellin with Sherlock Homes. Our advanced aggregator finds the best apartments, penthouses, and homes in El Poblado, Envigado, and beyond."
-    />
-    <link rel="stylesheet" href="/static/styles.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-      crossorigin=""
-    />
-    <script
-      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-      crossorigin=""
-    ></script>
-  </head>
 
-  <body>
-    <div class="background-globes">
-      <div class="globe globe-1"></div>
-      <div class="globe globe-2"></div>
-    </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sherlock Homes</title>
+  <link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg" />
+  <meta name="description"
+    content="Discover the finest properties in Medellin with Sherlock Homes. Our advanced aggregator finds the best apartments, penthouses, and homes in El Poblado, Envigado, and beyond." />
+  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
 
-    <div class="app-container">
-      <header>
-        <div class="logo">
-          <div class="logo-icon">
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </div>
-          <h1>Sherlock <span class="highlight">Homes</span></h1>
+<body>
+  <div class="background-globes">
+    <div class="globe globe-1"></div>
+    <div class="globe globe-2"></div>
+  </div>
+
+  <div class="app-container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">
+          <i class="fa-solid fa-magnifying-glass"></i>
         </div>
-      </header>
+        <h1>Sherlock <span class="highlight">Homes</span></h1>
+      </div>
+      <div class="header-actions">
+        <button id="themeToggle" class="theme-toggle-btn" aria-label="Alternar tema">
+          <i class="fa-solid fa-sun"></i>
+        </button>
+      </div>
+    </header>
 
-      <section class="hero-section">
-        <div class="hero-content">
-          <h2 class="hero-title">Encuentra tu apartamento ideal</h2>
-          <p class="hero-subtitle">
-            Explora las mejores propiedades de múltiples fuentes en un solo
-            lugar. No más páginas de mierda.
-          </p>
+    <section class="hero-section">
+      <div class="hero-content">
+        <h2 class="hero-title">Encuentra tu apartamento ideal</h2>
+        <p class="hero-subtitle">
+          Explora las mejores propiedades de múltiples fuentes en un solo
+          lugar. No más páginas de mierda.
+        </p>
 
-          <div class="search-bar-container">
-            <div class="search-input-wrapper">
-              <input type="hidden" id="websiteSelect" value="all" />
-              <div class="custom-select-wrapper">
-                <div class="custom-select-trigger">
-                  <div class="selected-content">
-                    <i class="fa-solid fa-earth-americas"></i>
-                    <span>Todas las fuentes</span>
-                  </div>
-                  <i class="fa-solid fa-chevron-down"></i>
+        <div class="search-bar-container">
+          <div class="search-input-wrapper">
+            <input type="hidden" id="websiteSelect" value="all" />
+            <div class="custom-select-wrapper">
+              <div class="custom-select-trigger">
+                <div class="selected-content">
+                  <i class="fa-solid fa-earth-americas"></i>
+                  <span>Todas las fuentes</span>
                 </div>
-                <div class="custom-options">
-                  <div class="custom-option selected" data-value="all">
-                    <i class="fa-solid fa-earth-americas"></i>
-                    <span>Todas las fuentes</span>
-                  </div>
-                  <div class="custom-option" data-value="alberto_alvarez">
-                    <img
-                      src="/static/assets/images/icons/alberto_alvarez.png"
-                      alt="Alberto Alvarez"
-                    />
-                    <span>Alberto Alvarez</span>
-                  </div>
-                  <div
-                    class="custom-option"
-                    data-value="arrendamientos_envigado"
-                  >
-                    <img
-                      src="/static/assets/images/icons/arrendamientos_envigado.png"
-                      alt="Arrendamientos Envigado"
-                    />
-                    <span>Arrendamientos Envigado</span>
-                  </div>
-                  <div class="custom-option" data-value="proteger">
-                    <img
-                      src="/static/assets/images/icons/proteger.png"
-                      alt="Inmobiliaria Proteger"
-                    />
-                    <span>Inmobiliaria Proteger</span>
-                  </div>
-                  <div
-                    class="custom-option"
-                    data-value="arrendamientos_las_vegas"
-                  >
-                    <img
-                      src="/static/assets/images/icons/arrendamientos_las_vegas.png"
-                      alt="Arrendamientos Las Vegas"
-                    />
-                    <span>Arrendamientos Las Vegas</span>
-                  </div>
-                  <div class="custom-option" data-value="escala_inmobiliaria">
-                    <img
-                      src="/static/assets/images/icons/escala_inmobiliaria.png"
-                      alt="Escala Inmobiliaria"
-                    />
-                    <span>Escala Inmobiliaria</span>
-                  </div>
-                  <div class="custom-option" data-value="uribienes">
-                    <img
-                      src="/static/assets/images/icons/uribienes.png"
-                      alt="Uribienes"
-                    />
-                    <span>Uribienes</span>
-                  </div>
-                  <div class="custom-option" data-value="livinmobiliaria">
-                    <img
-                      src="/static/assets/images/icons/livinmobiliaria.png"
-                      alt="Livinmobiliaria"
-                    />
-                    <span>Livinmobiliaria</span>
-                  </div>
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+              <div class="custom-options">
+                <div class="custom-option selected" data-value="all">
+                  <i class="fa-solid fa-earth-americas"></i>
+                  <span>Todas las fuentes</span>
+                </div>
+                <div class="custom-option" data-value="alberto_alvarez">
+                  <img src="/static/assets/images/icons/alberto_alvarez.png" alt="Alberto Alvarez" />
+                  <span>Alberto Alvarez</span>
+                </div>
+                <div class="custom-option" data-value="arrendamientos_envigado">
+                  <img src="/static/assets/images/icons/arrendamientos_envigado.png" alt="Arrendamientos Envigado" />
+                  <span>Arrendamientos Envigado</span>
+                </div>
+                <div class="custom-option" data-value="proteger">
+                  <img src="/static/assets/images/icons/proteger.png" alt="Inmobiliaria Proteger" />
+                  <span>Inmobiliaria Proteger</span>
+                </div>
+                <div class="custom-option" data-value="arrendamientos_las_vegas">
+                  <img src="/static/assets/images/icons/arrendamientos_las_vegas.png" alt="Arrendamientos Las Vegas" />
+                  <span>Arrendamientos Las Vegas</span>
+                </div>
+                <div class="custom-option" data-value="escala_inmobiliaria">
+                  <img src="/static/assets/images/icons/escala_inmobiliaria.png" alt="Escala Inmobiliaria" />
+                  <span>Escala Inmobiliaria</span>
+                </div>
+                <div class="custom-option" data-value="uribienes">
+                  <img src="/static/assets/images/icons/uribienes.png" alt="Uribienes" />
+                  <span>Uribienes</span>
+                </div>
+                <div class="custom-option" data-value="livinmobiliaria">
+                  <img src="/static/assets/images/icons/livinmobiliaria.png" alt="Livinmobiliaria" />
+                  <span>Livinmobiliaria</span>
                 </div>
               </div>
             </div>
-            <div class="divider"></div>
-            <div class="update-toggle">
-              <input type="checkbox" id="forceUpdate" />
-              <label for="forceUpdate">Forzar Actualización</label>
-            </div>
-            <button id="scrapeBtn" class="premium-btn">
-              <i class="fa-solid fa-arrows-rotate"></i> Actualizar
-            </button>
           </div>
-        </div>
-      </section>
-
-      <section class="filters-glass">
-        <div class="filter-group">
-          <label><i class="fa-solid fa-dollar-sign"></i> Precio Mín</label>
-          <input
-            type="number"
-            id="filterPriceMin"
-            placeholder="Ej: 1000000"
-            value="0"
-          />
-        </div>
-        <div class="filter-group">
-          <label><i class="fa-solid fa-dollar-sign"></i> Precio Máx</label>
-          <input
-            type="number"
-            id="filterPriceMax"
-            placeholder="Ej: 4000000"
-            value="4000000"
-          />
-        </div>
-        <div class="filter-group">
-          <label><i class="fa-solid fa-bed"></i> Hab. Mín</label>
-          <input type="number" id="filterBedroomsMin" placeholder="Ej: 1" />
-        </div>
-        <div class="filter-group">
-          <label><i class="fa-solid fa-bed"></i> Hab. Máx</label>
-          <input type="number" id="filterBedroomsMax" placeholder="Ej: 5" />
-        </div>
-        <div class="filter-group">
-          <label><i class="fa-solid fa-car"></i> Parking Mín</label>
-          <input type="number" id="filterParkingMin" placeholder="Ej: 1" />
-        </div>
-        <div class="filter-group">
-          <label
-            ><i class="fa-solid fa-ruler-combined"></i> Área Mín (m²)</label
-          >
-          <input type="number" id="filterAreaMin" placeholder="Ej: 60" />
-        </div>
-        <div class="filter-group">
-          <label
-            ><i class="fa-solid fa-ruler-combined"></i> Área Máx (m²)</label
-          >
-          <input type="number" id="filterAreaMax" placeholder="Ej: 120" />
-        </div>
-        <div class="filter-group">
-          <label><i class="fa-solid fa-map-pin"></i> Barrio</label>
-          <div class="multi-select-container">
-            <div class="multi-select-btn" id="barrioSelectBtn">
-              <span id="barrioSelectText">Todos</span>
-              <i class="fa-solid fa-chevron-down"></i>
-            </div>
-            <div class="dropdown-content" id="barrioDropdown">
-              <label class="checkbox-item">
-                <input type="checkbox" value="all" checked /> Todos
-              </label>
-              <!-- Options will be populated by JS -->
-            </div>
+          <div class="divider"></div>
+          <div class="update-toggle">
+            <input type="checkbox" id="forceUpdate" />
+            <label for="forceUpdate">Forzar Actualización</label>
           </div>
-        </div>
-      </section>
-
-      <div class="results-banner hidden" id="resultsBanner">
-        <div style="display: flex; align-items: center; gap: 10px">
-          <i class="fa-solid fa-check-circle"></i>
-          <span id="resultsCount">Se encontraron 0 apartamentos</span>
-          <button
-            id="mapViewButton"
-            class="premium-btn"
-            style="margin-left: 1rem; padding: 0.4rem 1rem; font-size: 0.9rem"
-          >
-            <i class="fa-solid fa-map"></i> Ver ubicaciones en mapa
+          <button id="scrapeBtn" class="premium-btn">
+            <i class="fa-solid fa-arrows-rotate"></i> Actualizar
           </button>
         </div>
-        <div class="sort-group">
-          <label for="sortSelect"
-            ><i class="fa-solid fa-sort"></i> Ordenar por:</label
-          >
-          <select
-            id="sortSelect"
-            class="url-input"
-            style="
+      </div>
+    </section>
+
+    <section class="filters-glass">
+      <div class="filter-group">
+        <label><i class="fa-solid fa-dollar-sign"></i> Precio Mín</label>
+        <input type="number" id="filterPriceMin" placeholder="Ej: 1000000" value="0" />
+      </div>
+      <div class="filter-group">
+        <label><i class="fa-solid fa-dollar-sign"></i> Precio Máx</label>
+        <input type="number" id="filterPriceMax" placeholder="Ej: 4000000" value="4000000" />
+      </div>
+      <div class="filter-group">
+        <label><i class="fa-solid fa-bed"></i> Hab. Mín</label>
+        <input type="number" id="filterBedroomsMin" placeholder="Ej: 1" />
+      </div>
+      <div class="filter-group">
+        <label><i class="fa-solid fa-bed"></i> Hab. Máx</label>
+        <input type="number" id="filterBedroomsMax" placeholder="Ej: 5" />
+      </div>
+      <div class="filter-group">
+        <label><i class="fa-solid fa-car"></i> Parking Mín</label>
+        <input type="number" id="filterParkingMin" placeholder="Ej: 1" />
+      </div>
+      <div class="filter-group">
+        <label><i class="fa-solid fa-ruler-combined"></i> Área Mín (m²)</label>
+        <input type="number" id="filterAreaMin" placeholder="Ej: 60" />
+      </div>
+      <div class="filter-group">
+        <label><i class="fa-solid fa-ruler-combined"></i> Área Máx (m²)</label>
+        <input type="number" id="filterAreaMax" placeholder="Ej: 120" />
+      </div>
+      <div class="filter-group">
+        <label><i class="fa-solid fa-map-pin"></i> Barrio</label>
+        <div class="multi-select-container">
+          <div class="multi-select-btn" id="barrioSelectBtn">
+            <span id="barrioSelectText">Todos</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="dropdown-content" id="barrioDropdown">
+            <label class="checkbox-item">
+              <input type="checkbox" value="all" checked /> Todos
+            </label>
+            <!-- Options will be populated by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="results-banner hidden" id="resultsBanner">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <i class="fa-solid fa-check-circle"></i>
+        <span id="resultsCount">Se encontraron 0 apartamentos</span>
+        <button id="mapViewButton" class="premium-btn"
+          style="margin-left: 1rem; padding: 0.4rem 1rem; font-size: 0.9rem">
+          <i class="fa-solid fa-map"></i> Ver ubicaciones en mapa
+        </button>
+      </div>
+      <div class="sort-group">
+        <label for="sortSelect"><i class="fa-solid fa-sort"></i> Ordenar por:</label>
+        <select id="sortSelect" class="url-input" style="
               padding: 0.6rem 1.2rem;
               height: auto;
               width: 260px;
               font-size: 1.1rem;
-            "
-          >
-            <option value="created_desc">Más recientes</option>
-            <option value="created_asc">Más antiguos</option>
-            <option value="price_asc">Precio: Menor a Mayor</option>
-            <option value="price_desc">Precio: Mayor a Menor</option>
-            <option value="area_asc">Área: Menor a Mayor</option>
-            <option value="area_desc">Área: Mayor a Menor</option>
-            <option value="barrio_asc">Barrio: A a Z</option>
-            <option value="barrio_desc">Barrio: Z a A</option>
-          </select>
-        </div>
-      </div>
-
-      <main id="propertiesGrid" class="grid-container">
-        <!-- Cards will be injected here -->
-        <div class="loading-state">
-          <i class="fa-solid fa-circle-notch fa-spin"></i>
-          <p>Cargando propiedades...</p>
-        </div>
-      </main>
-      <footer class="main-footer">
-        <div class="footer-bottom">
-          <p>
-            &copy; 2026 Sherlock Homes Medellin. Todos los derechos reservados.
-          </p>
-        </div>
-      </footer>
-    </div>
-
-    <div id="notification" class="notification hidden">
-      <div class="notif-content">
-        <i class="fa-solid fa-bell"></i>
-        <p id="notifMessage">Mensaje</p>
+            ">
+          <option value="created_desc">Más recientes</option>
+          <option value="created_asc">Más antiguos</option>
+          <option value="price_asc">Precio: Menor a Mayor</option>
+          <option value="price_desc">Precio: Mayor a Menor</option>
+          <option value="area_asc">Área: Menor a Mayor</option>
+          <option value="area_desc">Área: Mayor a Menor</option>
+          <option value="barrio_asc">Barrio: A a Z</option>
+          <option value="barrio_desc">Barrio: Z a A</option>
+        </select>
       </div>
     </div>
 
-    <!-- Map Modal -->
-    <div id="mapModal" class="image-modal hidden">
-      <button class="modal-close" aria-label="Cerrar">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-      <div class="modal-content" style="max-width: 1200px; width: 95%">
-        <h3
-          id="mapTitle"
-          style="color: white; margin-bottom: 10px; text-align: center"
-        >
-          Ubicación
-        </h3>
-        <div
-          id="mapContainer"
-          style="width: 100%; height: 700px; border-radius: 8px"
-        ></div>
+    <main id="propertiesGrid" class="grid-container">
+      <!-- Cards will be injected here -->
+      <div class="loading-state">
+        <i class="fa-solid fa-circle-notch fa-spin"></i>
+        <p>Cargando propiedades...</p>
       </div>
-    </div>
-
-    <!-- Image Modal -->
-    <div id="imageModal" class="image-modal hidden">
-      <button class="modal-close" aria-label="Cerrar">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-      <button class="modal-nav prev" aria-label="Anterior">
-        <i class="fa-solid fa-chevron-left"></i>
-      </button>
-      <div class="modal-content">
-        <img id="modalImage" src="" alt="Vista ampliada" />
-        <div class="modal-counter">1/10</div>
+    </main>
+    <footer class="main-footer">
+      <div class="footer-bottom">
+        <p>
+          &copy; 2026 Sherlock Homes Medellin. Todos los derechos reservados.
+        </p>
       </div>
-      <button class="modal-nav next" aria-label="Siguiente">
-        <i class="fa-solid fa-chevron-right"></i>
-      </button>
-    </div>
+    </footer>
+  </div>
 
-    <script type="module" src="/static/script.js?v=3.2"></script>
-  </body>
+  <div id="notification" class="notification hidden">
+    <div class="notif-content">
+      <i class="fa-solid fa-bell"></i>
+      <p id="notifMessage">Mensaje</p>
+    </div>
+  </div>
+
+  <!-- Map Modal -->
+  <div id="mapModal" class="image-modal hidden">
+    <button class="modal-close" aria-label="Cerrar">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+    <div class="modal-content" style="max-width: 1200px; width: 95%">
+      <h3 id="mapTitle" style="color: white; margin-bottom: 10px; text-align: center">
+        Ubicación
+      </h3>
+      <div id="mapContainer" style="width: 100%; height: 700px; border-radius: 8px"></div>
+    </div>
+  </div>
+
+  <!-- Image Modal -->
+  <div id="imageModal" class="image-modal hidden">
+    <button class="modal-close" aria-label="Cerrar">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+    <button class="modal-nav prev" aria-label="Anterior">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+    <div class="modal-content">
+      <img id="modalImage" src="" alt="Vista ampliada" />
+      <div class="modal-counter">1/10</div>
+    </div>
+    <button class="modal-nav next" aria-label="Siguiente">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+  </div>
+
+  <script type="module" src="/static/script.js?v=3.2"></script>
+</body>
+
 </html>

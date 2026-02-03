@@ -150,6 +150,40 @@ function setupEventListeners() {
     // Callback when barrios change
     loadProperties();
   });
+  // Theme Toggle
+  setupTheme();
+}
+
+function setupTheme() {
+  const themeBtn = document.getElementById("themeToggle");
+  if (!themeBtn) return;
+
+  const icon = themeBtn.querySelector("i");
+
+  // Check saved theme
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "light") {
+    document.body.setAttribute("data-theme", "light");
+    icon.classList.remove("fa-sun");
+    icon.classList.add("fa-moon");
+  }
+
+  themeBtn.addEventListener("click", () => {
+    const currentTheme = document.body.getAttribute("data-theme");
+    if (currentTheme === "light") {
+      // Switch to Dark
+      document.body.removeAttribute("data-theme");
+      localStorage.setItem("theme", "dark");
+      icon.classList.remove("fa-moon");
+      icon.classList.add("fa-sun");
+    } else {
+      // Switch to Light
+      document.body.setAttribute("data-theme", "light");
+      localStorage.setItem("theme", "light");
+      icon.classList.remove("fa-sun");
+      icon.classList.add("fa-moon");
+    }
+  });
 }
 
 async function handleScrape() {
@@ -249,3 +283,4 @@ async function handleScrape() {
     icon.classList.remove("fa-spin");
   }
 }
+
