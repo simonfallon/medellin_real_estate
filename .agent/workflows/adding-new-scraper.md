@@ -1,4 +1,6 @@
-# How to Add a New Real Estate Scraper
+---
+description: How to Add a New Real Estate Scraper
+---
 
 This document serves as a comprehensive guide for adding a new real estate website to the scraping engine. It covers backend implementation, testing strategy, image validation, and frontend integration.
 
@@ -97,109 +99,7 @@ Use these utilities instead of writing custom implementations:
 
 ### Example Scraper Structure:
 
-```python
-import re
-from typing import List, Tuple, Optional
-from playwright.async_api import Page
-
-from .base import BaseScraper, ScraperConfig
-from .types import Property
-
-BASE_URL = "https://example.com"
-SEARCH_URL_TEMPLATE = "https://example.com/search?price_min={min_price}&price_max={max_price}&barrio={barrio}"
-
-BARRIOS = {
-    "La Abadia": "la-abadia",
-    "Zuñiga": "zuniga",
-}
-
-UNIFIED_BARRIOS = {
-    "La Abadia": "La Abadia",
-    "Zuñiga": "Zuñiga",
-}
-
-class ExampleScraper(BaseScraper):
-    def __init__(self):
-        config = ScraperConfig(
-            detail_concurrency=3,
-            search_concurrency=5,
-        )
-        super().__init__(name="Example Site", config=config)
-
-    async def get_search_inputs(self) -> List[Tuple[str, str]]:
-        inputs = []
-        for barrio_name, barrio_slug in BARRIOS.items():
-            for price_range in self.PRICE_RANGES:
-                url = SEARCH_URL_TEMPLATE.format(
-                    min_price=price_range["min"],
-                    max_price=price_range["max"],
-                    barrio=barrio_slug,
-                )
-                unified_name = UNIFIED_BARRIOS.get(barrio_name, barrio_name)
-                inputs.append((url, unified_name))
-        return inputs
-
-    # process_search_inputs() is inherited from BaseScraper
-
-    async def _extract_links_from_search_page(self, page: Page, search_url: str) -> List[str]:
-        await self.navigate_and_wait(page, search_url, wait_for_selector="a.property-link")
-
-        links = []
-        property_links = await page.locator("a.property-link").all()
-        for link_el in property_links:
-            href = await link_el.get_attribute("href")
-            if href:
-                href = self.normalize_url(href, BASE_URL)
-                links.append(href)
-        return list(set(links))
-
-    async def extract_property_details(self, page: Page, link: str, barrio_name: str) -> Optional[Property]:
-        await self.navigate_and_wait(page, link, wait_for_selector="h1")
-
-        # Extract title
-        title = ""
-        try:
-            title_el = page.locator("h1").first
-            if await title_el.count() > 0:
-                title = await title_el.inner_text()
-        except:
-            pass
-
-        # Extract features using base class utility
-        full_text = await page.locator("body").inner_text()
-        features = self.extract_features_from_text(full_text)
-
-        # Extract images using filter utility
-        raw_images = []
-        imgs = await page.locator(".gallery img").all()
-        for img in imgs:
-            src = await img.get_attribute("src")
-            if src:
-                raw_images.append(src)
-        images = self.filter_property_images(raw_images)
-
-        # Extract GPS using base utility
-        latitude, longitude = await self.extract_gps_coordinates(page, full_text)
-
-        return {
-            "code": "",
-            "title": title.strip(),
-            "location": barrio_name,
-            "price": features["price"],
-            "area": features["area"],
-            "bedrooms": features["bedrooms"],
-            "bathrooms": features["bathrooms"],
-            "parking": features["parking"],
-            "estrato": features["estrato"],
-            "images": images,
-            "image_url": images[0] if images else "",
-            "link": link,
-            "source": "example_site",
-            "description": "",
-            "latitude": latitude,
-            "longitude": longitude,
-        }
-```
+See `backend/scrapers/livin_inmobiliaria.py` for a complete example.
 
 ### Unified Neighborhood Logic:
 To ensure the "Barrio" filter works correctly on the frontend, we must standardize neighborhood names.
